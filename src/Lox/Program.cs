@@ -7,6 +7,6 @@ if (args.Length > 1)
 }
 
 if (args is [var path])
-    await Interpreter.RunFileAsync(path);
+    await Runner.RunFileAsync(path);
 else
-    Interpreter.RunPrompt();
+    Runner.RunPrompt();

@@ -29,7 +29,7 @@ public class Lexer(string source)
         if (readTokenResult is Token token)
             tokens.Add(token);
         else if (readTokenResult is UnexpectedCharacter unexpected)
-            Interpreter.Error(line, $"Unexpected character: {unexpected.Character}");
+            Runner.Error(line, $"Unexpected character: {unexpected.Character}");
     }
 
     private LexingUnit TryReadToken() => Advance() switch

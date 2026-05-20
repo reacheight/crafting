@@ -2,7 +2,7 @@
 
 namespace Lox;
 
-public static class Interpreter
+public static class Runner
 {
     public static bool HadError { get; private set; }
 
