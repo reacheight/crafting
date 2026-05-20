@@ -29,13 +29,13 @@ public class Lexer(string source)
         if (lexingUnit is Token token)
             tokens.Add(token);
         else if (lexingUnit is UnexpectedCharacter unexpected)
-            Runner.Error(line, $"Unexpected character: {unexpected.Character}");
+            Runner.Error(line, $"Unexpected character '{unexpected.Character}'");
     }
 
     private LexingUnit ScanLexingUnit()
     {
-        var current = Advance();
-        return current switch
+        var currentChar = Advance();
+        return currentChar switch
         {
             '(' => CreateToken(TokenType.LEFT_PAREN),
             ')' => CreateToken(TokenType.RIGHT_PAREN),
@@ -67,7 +67,7 @@ public class Lexer(string source)
             ' ' or '\r' or '\t' => HandleWhitespace(),
             '\n' => HandleLinebreak(),
 
-            _ => new UnexpectedCharacter(current),
+            _ => new UnexpectedCharacter(currentChar),
         };
     }
 
