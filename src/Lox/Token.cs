@@ -5,4 +5,4 @@ public record struct Token(TokenType Type, string Lexeme, TokenLiteral? Literal,
     public override string ToString() => $"{Type} {Lexeme} {Literal}";
 }
 
-public union TokenLiteral(string, double, bool);
+public readonly union TokenLiteral(string, double, bool);

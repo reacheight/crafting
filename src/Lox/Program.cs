@@ -6,9 +6,7 @@ if (args.Length > 1)
     return;
 }
 
-var interpreter = new Interpreter();
-
 if (args is [var path])
-    await interpreter.RunFileAsync(path);
+    await Interpreter.RunFileAsync(path);
 else
-    interpreter.RunPrompt();
+    Interpreter.RunPrompt();
