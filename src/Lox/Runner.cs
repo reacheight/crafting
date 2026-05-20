@@ -33,7 +33,7 @@ public static class Runner
     {
         var lexer = new Lexer(source);
 
-        foreach (var token in lexer.LexTokens())
+        foreach (var token in lexer.Tokenize())
             Console.WriteLine(token);
     }
 

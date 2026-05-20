@@ -10,12 +10,12 @@ public class Lexer(string source)
 
     private bool IsAtEnd => current >= source.Length;
 
-    public IEnumerable<Token> LexTokens()
+    public IEnumerable<Token> Tokenize()
     {
         while (!IsAtEnd)
         {
             start = current;
-            LexToken();
+            ScanToken();
         }
 
         tokens.Add(new(TokenType.EOF, "", null, line));
@@ -23,49 +23,53 @@ public class Lexer(string source)
     }
 
 
-    private void LexToken()
+    private void ScanToken()
     {
-        var readTokenResult = TryReadToken();
-        if (readTokenResult is Token token)
+        var lexingUnit = ScanLexingUnit();
+        if (lexingUnit is Token token)
             tokens.Add(token);
-        else if (readTokenResult is UnexpectedCharacter unexpected)
+        else if (lexingUnit is UnexpectedCharacter unexpected)
             Runner.Error(line, $"Unexpected character: {unexpected.Character}");
     }
 
-    private LexingUnit TryReadToken() => Advance() switch
+    private LexingUnit ScanLexingUnit()
     {
-        '(' => CreateToken(TokenType.LEFT_PAREN),
-        ')' => CreateToken(TokenType.RIGHT_PAREN),
-        '{' => CreateToken(TokenType.LEFT_BRACE),
-        '}' => CreateToken(TokenType.RIGHT_BRACE),
-        ',' => CreateToken(TokenType.COMMA),
-        '.' => CreateToken(TokenType.DOT),
-        '-' => CreateToken(TokenType.MINUS),
-        '+' => CreateToken(TokenType.PLUS),
-        ';' => CreateToken(TokenType.SEMICOLON),
-        '*' => CreateToken(TokenType.STAR),
+        var current = Advance();
+        return current switch
+        {
+            '(' => CreateToken(TokenType.LEFT_PAREN),
+            ')' => CreateToken(TokenType.RIGHT_PAREN),
+            '{' => CreateToken(TokenType.LEFT_BRACE),
+            '}' => CreateToken(TokenType.RIGHT_BRACE),
+            ',' => CreateToken(TokenType.COMMA),
+            '.' => CreateToken(TokenType.DOT),
+            '-' => CreateToken(TokenType.MINUS),
+            '+' => CreateToken(TokenType.PLUS),
+            ';' => CreateToken(TokenType.SEMICOLON),
+            '*' => CreateToken(TokenType.STAR),
 
-        '!' => CreateToken(AdvanceIfMatch('=')
-                ? TokenType.BANG_EQUAL
-                : TokenType.BANG),
-        '=' => CreateToken(AdvanceIfMatch('=')
-                ? TokenType.EQUAL_EQUAL
-                : TokenType.EQUAL),
-        '>' => CreateToken(AdvanceIfMatch('=')
-                ? TokenType.GREATER_EQUAL
-                : TokenType.GREATER),
-        '<' => CreateToken(AdvanceIfMatch('=')
-                ? TokenType.LESS_EQUAL
-                : TokenType.LESS),
+            '!' => CreateToken(AdvanceIfMatch('=')
+                    ? TokenType.BANG_EQUAL
+                    : TokenType.BANG),
+            '=' => CreateToken(AdvanceIfMatch('=')
+                    ? TokenType.EQUAL_EQUAL
+                    : TokenType.EQUAL),
+            '>' => CreateToken(AdvanceIfMatch('=')
+                    ? TokenType.GREATER_EQUAL
+                    : TokenType.GREATER),
+            '<' => CreateToken(AdvanceIfMatch('=')
+                    ? TokenType.LESS_EQUAL
+                    : TokenType.LESS),
 
-        '/' when AdvanceIfMatch('/') => HandleComment(),
-        '/' => CreateToken(TokenType.SLASH),
+            '/' when AdvanceIfMatch('/') => HandleComment(),
+            '/' => CreateToken(TokenType.SLASH),
 
-        ' ' or '\r' or '\t' => HandleWhitespace(),
-        '\n' => HandleLinebreak(),
+            ' ' or '\r' or '\t' => HandleWhitespace(),
+            '\n' => HandleLinebreak(),
 
-        _ => null,
-    };
+            _ => new UnexpectedCharacter(current),
+        };
+    }
 
     private char Advance() => source[current++];
     private char Peek() => source[current];
