@@ -63,20 +63,20 @@ public class Lexer(string source)
                     ? TokenType.LESS_EQUAL
                     : TokenType.LESS),
 
-            '/' when AdvanceIfMatch('/') => HandleComment(),
+            '/' when AdvanceIfMatch('/') => ScanComment(),
             '/' => CreateToken(TokenType.SLASH),
 
-            ' ' or '\r' or '\t' => HandleWhitespace(),
-            '\n' => HandleLinebreak(),
+            ' ' or '\r' or '\t' => ScanWhitespace(),
+            '\n' => ScanNewline(),
 
-            '"' => HandleString(),
-            _ when char.IsDigit(currentChar) => HandleNumber(),
+            '"' => ScanString(),
+            _ when char.IsDigit(currentChar) => ScanNumber(),
 
             _ => new SyntaxError($"Unexpected character: {currentChar}"),
         };
     }
 
-    private LexingUnit HandleNumber()
+    private Token ScanNumber()
     {
         ScanDigits();
 
@@ -96,12 +96,12 @@ public class Lexer(string source)
         }
     }
 
-    private LexingUnit HandleString()
+    private LexingUnit ScanString()
     {
         while (!IsAtEnd && Peek() != '"')
         {
             if (Peek() == '\n')
-                line++;
+                ScanNewline();
 
             Advance();
         }
@@ -113,6 +113,34 @@ public class Lexer(string source)
 
         var val = source[(start + 1)..(current - 1)];
         return CreateToken(TokenType.STRING, new(val));
+    }
+
+    private Token CreateToken(TokenType type, TokenLiteral? literal = null)
+    {
+        var text = source[start..current];
+        return new(type, text, literal, line);
+    }
+
+    private Comment ScanComment()
+    {
+        while (!IsAtEnd && Peek() != '\n')
+            Advance();
+
+        return new();
+    }
+
+    private Whitespace ScanWhitespace()
+    {
+        while (Peek() is ' ' or '\r' or '\t')
+            Advance();
+
+        return new();
+    }
+
+    private Whitespace ScanNewline()
+    {
+        line++;
+        return new();
     }
 
     private char Advance() => source[current++];
@@ -128,34 +156,5 @@ public class Lexer(string source)
 
         current++;
         return true;
-
-    }
-
-    private Token CreateToken(TokenType type, TokenLiteral? literal = null)
-    {
-        var text = source[start..current];
-        return new(type, text, literal, line);
-    }
-
-    private Comment HandleComment()
-    {
-        while (!IsAtEnd && Peek() != '\n')
-            Advance();
-
-        return new();
-    }
-
-    private Whitespace HandleWhitespace()
-    {
-        while (Peek() is ' ' or '\r' or '\t')
-            Advance();
-
-        return new();
-    }
-
-    private Whitespace HandleLinebreak()
-    {
-        line++;
-        return new();
     }
 }
