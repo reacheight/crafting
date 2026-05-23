@@ -1,0 +1,5 @@
+[*.cs]
+
+# RCS1129: Remove redundant field initialization
+dotnet_diagnostic.RCS1129.severity = none
+

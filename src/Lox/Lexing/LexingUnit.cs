@@ -1,7 +1,7 @@
 ﻿namespace Lox.Lexing;
 
-public readonly union LexingUnit(Token, Comment, Whitespace, UnexpectedCharacter);
+public readonly union LexingUnit(Token, Comment, Whitespace, SyntaxError);
 
 public record Comment;
 public record Whitespace;
-public record UnexpectedCharacter(char Character);
+public record SyntaxError(string Message);

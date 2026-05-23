@@ -28,8 +28,8 @@ public class Lexer(string source)
         var lexingUnit = ScanLexingUnit();
         if (lexingUnit is Token token)
             tokens.Add(token);
-        else if (lexingUnit is UnexpectedCharacter unexpected)
-            Runner.Error(line, $"Unexpected character '{unexpected.Character}'");
+        else if (lexingUnit is SyntaxError error)
+            Runner.Error(line, $"[syntax error] {error.Message}");
     }
 
     private LexingUnit ScanLexingUnit()
@@ -67,8 +67,29 @@ public class Lexer(string source)
             ' ' or '\r' or '\t' => HandleWhitespace(),
             '\n' => HandleLinebreak(),
 
-            _ => new UnexpectedCharacter(currentChar),
+            '"' => HandleString(),
+
+            _ => new SyntaxError($"Unexpected character: {currentChar}"),
         };
+    }
+
+    private LexingUnit HandleString()
+    {
+        while (!IsAtEnd && Peek() != '"')
+        {
+            if (Peek() == '\n')
+                line++;
+
+            Advance();
+        }
+
+        if (IsAtEnd)
+            return new SyntaxError("Unterminated string.");
+
+        Advance();
+
+        var val = source[(start + 1)..(current - 1)];
+        return CreateToken(TokenType.STRING, new(val));
     }
 
     private char Advance() => source[current++];

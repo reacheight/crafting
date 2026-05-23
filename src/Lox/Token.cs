@@ -1,8 +1,8 @@
 ﻿namespace Lox;
 
-public record struct Token(TokenType Type, string Lexeme, TokenLiteral? Literal, int Line)
+public record Token(TokenType Type, string Lexeme, TokenLiteral? Literal, int Line)
 {
-    public override string ToString() => $"{Type} {Lexeme} {Literal}";
+    public override string ToString() => $"{Type} {Lexeme} {Literal?.Value}";
 }
 
 public readonly union TokenLiteral(string, double, bool);
