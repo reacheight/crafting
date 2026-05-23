@@ -1,4 +1,6 @@
-﻿namespace Lox.Lexing;
+﻿using System.Globalization;
+
+namespace Lox.Lexing;
 
 public class Lexer(string source)
 {
@@ -68,9 +70,30 @@ public class Lexer(string source)
             '\n' => HandleLinebreak(),
 
             '"' => HandleString(),
+            _ when char.IsDigit(currentChar) => HandleNumber(),
 
             _ => new SyntaxError($"Unexpected character: {currentChar}"),
         };
+    }
+
+    private LexingUnit HandleNumber()
+    {
+        ScanDigits();
+
+        if (Peek() == '.' && char.IsDigit(Peek(1)))
+        {
+            Advance();
+            ScanDigits();
+        }
+
+        var val = double.Parse(source[start..current], CultureInfo.InvariantCulture);
+        return CreateToken(TokenType.NUMBER, new(val));
+
+        void ScanDigits()
+        {
+            while (char.IsDigit(Peek()))
+                Advance();
+        }
     }
 
     private LexingUnit HandleString()
@@ -93,15 +116,19 @@ public class Lexer(string source)
     }
 
     private char Advance() => source[current++];
-    private char Peek() => source[current];
+    private char Peek(int offset = 0) => source.ElementAtOrDefault(current + offset);
 
     private bool AdvanceIfMatch(char expected)
+        => AdvanceIfMatch(c => c == expected);
+
+    private bool AdvanceIfMatch(Predicate<char> predicate)
     {
-        if (IsAtEnd || Peek() != expected)
+        if (IsAtEnd || !predicate(Peek()))
             return false;
 
         current++;
         return true;
+
     }
 
     private Token CreateToken(TokenType type, TokenLiteral? literal = null)
@@ -120,7 +147,7 @@ public class Lexer(string source)
 
     private Whitespace HandleWhitespace()
     {
-        while (!IsAtEnd && Peek() is ' ' or '\r' or '\t')
+        while (Peek() is ' ' or '\r' or '\t')
             Advance();
 
         return new();
