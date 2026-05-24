@@ -3,33 +3,33 @@
 namespace Lox.Syntax;
 
 public readonly union BinaryOperator(
-    Plus, Minus, Star, Slash,
+    Add, Substract, Multiply, Divide,
     Less, LessEqual, Greater, GreaterEqual,
-    EqualEqual, BangEqual
+    Equal, NotEqual
 )
 {
     public override string ToString() => Value switch
     {
-        Plus => "+",
-        Minus => "-",
-        Star => "*",
-        Slash => "/",
+        Add => "+",
+        Substract => "-",
+        Multiply => "*",
+        Divide => "/",
         Less => "<",
         LessEqual => "<=",
         Greater => ">",
         GreaterEqual => ">=",
-        EqualEqual => "==",
-        BangEqual => "!=",
+        Equal => "==",
+        NotEqual => "!=",
     };
 }
 
-public record struct Minus;
-public record struct Plus;
-public record struct Star;
-public record struct Slash;
+public record struct Substract;
+public record struct Add;
+public record struct Multiply;
+public record struct Divide;
 public record struct Less;
 public record struct LessEqual;
 public record struct Greater;
 public record struct GreaterEqual;
-public record struct EqualEqual;
-public record struct BangEqual;
+public record struct Equal;
+public record struct NotEqual;

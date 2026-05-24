@@ -2,14 +2,14 @@
 
 namespace Lox.Syntax;
 
-public readonly union UnaryOperator(Bang, Negate)
+public readonly union UnaryOperator(Not, Negate)
 {
     public override string ToString() => Value switch
     {
         Negate => "-",
-        Bang => "!",
+        Not => "!",
     };
 }
 
-public record struct Bang;
+public record struct Not;
 public record struct Negate;
