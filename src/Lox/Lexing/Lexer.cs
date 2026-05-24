@@ -4,8 +4,6 @@ namespace Lox.Lexing;
 
 public class Lexer(string source)
 {
-    private readonly List<Token> tokens = [];
-
     private int start = 0;
     private int current = 0;
     private int line = 1;
@@ -35,21 +33,15 @@ public class Lexer(string source)
         while (!IsAtEnd)
         {
             start = current;
-            ScanToken();
+
+            var lexingUnit = ScanLexingUnit();
+            if (lexingUnit is Token token)
+                yield return token;
+            else if (lexingUnit is SyntaxError error)
+                Runner.Error(line, $"[syntax error] {error.Message}");
         }
 
-        tokens.Add(new(TokenType.EOF, "", null, line));
-        return tokens;
-    }
-
-
-    private void ScanToken()
-    {
-        var lexingUnit = ScanLexingUnit();
-        if (lexingUnit is Token token)
-            tokens.Add(token);
-        else if (lexingUnit is SyntaxError error)
-            Runner.Error(line, $"[syntax error] {error.Message}");
+        yield return new(TokenType.EOF, "", null, line);
     }
 
     private LexingUnit ScanLexingUnit()
