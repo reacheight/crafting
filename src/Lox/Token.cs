@@ -5,4 +5,4 @@ public record Token(TokenType Type, string Lexeme, TokenLiteral? Literal, int Li
     public override string ToString() => $"{Type} {Lexeme} {Literal?.Value}";
 }
 
-public readonly union TokenLiteral(string, double, bool);
+public readonly union TokenLiteral(string, double);
