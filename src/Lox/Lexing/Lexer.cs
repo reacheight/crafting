@@ -10,7 +10,25 @@ public class Lexer(string source)
     private int current = 0;
     private int line = 1;
 
-    private bool IsAtEnd => current >= source.Length;
+    private static readonly Dictionary<string, TokenType> keywordMap = new()
+    {
+        ["and"] = TokenType.AND,
+        ["class"] = TokenType.CLASS,
+        ["else"] = TokenType.ELSE,
+        ["false"] = TokenType.FALSE,
+        ["fun"] = TokenType.FUN,
+        ["for"] = TokenType.FOR,
+        ["if"] = TokenType.IF,
+        ["nil"] = TokenType.NIL,
+        ["or"] = TokenType.OR,
+        ["print"] = TokenType.PRINT,
+        ["return"] = TokenType.RETURN,
+        ["super"] = TokenType.SUPER,
+        ["this"] = TokenType.THIS,
+        ["true"] = TokenType.TRUE,
+        ["var"] = TokenType.VAR,
+        ["while"] = TokenType.WHILE,
+    };
 
     public IEnumerable<Token> Tokenize()
     {
@@ -70,10 +88,24 @@ public class Lexer(string source)
             '\n' => ScanNewline(),
 
             '"' => ScanString(),
+
             _ when char.IsDigit(currentChar) => ScanNumber(),
+
+            _ when char.IsLetter(currentChar) || currentChar == '_' => ScanIdentifierOrKeyword(),
 
             _ => new SyntaxError($"Unexpected character: {currentChar}"),
         };
+    }
+
+    private Token ScanIdentifierOrKeyword()
+    {
+        while (char.IsLetterOrDigit(Peek()) || Peek() == '_')
+            Advance();
+
+        var text = GetCurrentTokenText();
+        return CreateToken(keywordMap.TryGetValue(text, out var keywordType)
+                ? keywordType
+                : TokenType.IDENTIFIER);
     }
 
     private Token ScanNumber()
@@ -86,7 +118,7 @@ public class Lexer(string source)
             ScanDigits();
         }
 
-        var val = double.Parse(source[start..current], CultureInfo.InvariantCulture);
+        var val = double.Parse(GetCurrentTokenText(), CultureInfo.InvariantCulture);
         return CreateToken(TokenType.NUMBER, new(val));
 
         void ScanDigits()
@@ -111,15 +143,12 @@ public class Lexer(string source)
 
         Advance();
 
-        var val = source[(start + 1)..(current - 1)];
+        var val = GetCurrentTokenText(1, -1);
         return CreateToken(TokenType.STRING, new(val));
     }
 
     private Token CreateToken(TokenType type, TokenLiteral? literal = null)
-    {
-        var text = source[start..current];
-        return new(type, text, literal, line);
-    }
+        => new(type, GetCurrentTokenText(), literal, line);
 
     private Comment ScanComment()
     {
@@ -142,6 +171,11 @@ public class Lexer(string source)
         line++;
         return new();
     }
+
+    private bool IsAtEnd => current >= source.Length;
+
+    private string GetCurrentTokenText(int startOffset = 0, int currentOffset = 0)
+        => source[(start + startOffset)..(current + currentOffset)];
 
     private char Advance() => source[current++];
     private char Peek(int offset = 0) => source.ElementAtOrDefault(current + offset);
