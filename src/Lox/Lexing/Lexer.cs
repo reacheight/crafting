@@ -10,22 +10,22 @@ public class Lexer(string source)
 
     private static readonly Dictionary<string, TokenType> keywordMap = new()
     {
-        ["and"] = TokenType.AND,
-        ["class"] = TokenType.CLASS,
-        ["else"] = TokenType.ELSE,
-        ["false"] = TokenType.FALSE,
-        ["fun"] = TokenType.FUN,
-        ["for"] = TokenType.FOR,
-        ["if"] = TokenType.IF,
-        ["nil"] = TokenType.NIL,
-        ["or"] = TokenType.OR,
-        ["print"] = TokenType.PRINT,
-        ["return"] = TokenType.RETURN,
-        ["super"] = TokenType.SUPER,
-        ["this"] = TokenType.THIS,
-        ["true"] = TokenType.TRUE,
-        ["var"] = TokenType.VAR,
-        ["while"] = TokenType.WHILE,
+        ["and"] = TokenType.And,
+        ["class"] = TokenType.Class,
+        ["else"] = TokenType.Else,
+        ["false"] = TokenType.False,
+        ["fun"] = TokenType.Fun,
+        ["for"] = TokenType.For,
+        ["if"] = TokenType.If,
+        ["nil"] = TokenType.Nil,
+        ["or"] = TokenType.Or,
+        ["print"] = TokenType.Print,
+        ["return"] = TokenType.Return,
+        ["super"] = TokenType.Super,
+        ["this"] = TokenType.This,
+        ["true"] = TokenType.True,
+        ["var"] = TokenType.Var,
+        ["while"] = TokenType.While,
     };
 
     public IEnumerable<Token> Tokenize()
@@ -41,7 +41,7 @@ public class Lexer(string source)
                 Runner.Error(line, $"[syntax error] {error.Message}");
         }
 
-        yield return new(TokenType.EOF, "", null, line);
+        yield return new(TokenType.Eof, "", null, line);
     }
 
     private LexingUnit ScanLexingUnit()
@@ -49,32 +49,32 @@ public class Lexer(string source)
         var currentChar = Advance();
         return currentChar switch
         {
-            '(' => CreateToken(TokenType.LEFT_PAREN),
-            ')' => CreateToken(TokenType.RIGHT_PAREN),
-            '{' => CreateToken(TokenType.LEFT_BRACE),
-            '}' => CreateToken(TokenType.RIGHT_BRACE),
-            ',' => CreateToken(TokenType.COMMA),
-            '.' => CreateToken(TokenType.DOT),
-            '-' => CreateToken(TokenType.MINUS),
-            '+' => CreateToken(TokenType.PLUS),
-            ';' => CreateToken(TokenType.SEMICOLON),
-            '*' => CreateToken(TokenType.STAR),
+            '(' => CreateToken(TokenType.LeftParen),
+            ')' => CreateToken(TokenType.RightParen),
+            '{' => CreateToken(TokenType.LeftBrace),
+            '}' => CreateToken(TokenType.RightBrace),
+            ',' => CreateToken(TokenType.Comma),
+            '.' => CreateToken(TokenType.Dot),
+            '-' => CreateToken(TokenType.Minus),
+            '+' => CreateToken(TokenType.Plus),
+            ';' => CreateToken(TokenType.Semicolon),
+            '*' => CreateToken(TokenType.Star),
 
             '!' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.BANG_EQUAL
-                    : TokenType.BANG),
+                    ? TokenType.BangEqual
+                    : TokenType.Bang),
             '=' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.EQUAL_EQUAL
-                    : TokenType.EQUAL),
+                    ? TokenType.EqualEqual
+                    : TokenType.Equal),
             '>' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.GREATER_EQUAL
-                    : TokenType.GREATER),
+                    ? TokenType.GreaterEqual
+                    : TokenType.Greater),
             '<' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.LESS_EQUAL
-                    : TokenType.LESS),
+                    ? TokenType.LessEqual
+                    : TokenType.Less),
 
             '/' when AdvanceIfMatch('/') => ScanComment(),
-            '/' => CreateToken(TokenType.SLASH),
+            '/' => CreateToken(TokenType.Slash),
 
             ' ' or '\r' or '\t' => ScanWhitespace(),
             '\n' => ScanNewline(),
@@ -97,7 +97,7 @@ public class Lexer(string source)
         var text = GetCurrentTokenText();
         return CreateToken(keywordMap.TryGetValue(text, out var keywordType)
                 ? keywordType
-                : TokenType.IDENTIFIER);
+                : TokenType.Identifier);
     }
 
     private Token ScanNumber()
@@ -111,7 +111,7 @@ public class Lexer(string source)
         }
 
         var val = double.Parse(GetCurrentTokenText(), CultureInfo.InvariantCulture);
-        return CreateToken(TokenType.NUMBER, new(val));
+        return CreateToken(TokenType.Number, new(val));
 
         void ScanDigits()
         {
@@ -136,7 +136,7 @@ public class Lexer(string source)
         Advance();
 
         var val = GetCurrentTokenText(1, -1);
-        return CreateToken(TokenType.STRING, new(val));
+        return CreateToken(TokenType.String, new(val));
     }
 
     private Token CreateToken(TokenType type, TokenLiteral? literal = null)
