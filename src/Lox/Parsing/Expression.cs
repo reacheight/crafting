@@ -1,6 +1,6 @@
 ﻿#pragma warning disable CS8509 // until union exhaustiveness is not here
 
-namespace Lox.Syntax;
+namespace Lox.Parsing;
 
 public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping)
 {

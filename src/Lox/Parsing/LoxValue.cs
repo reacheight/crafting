@@ -2,7 +2,7 @@
 
 using System.Globalization;
 
-namespace Lox.Syntax;
+namespace Lox.Parsing;
 
 public readonly union LoxValue(string, double, bool, Nil)
 {
