@@ -24,6 +24,7 @@ public static class Runner
                 return;
 
             Run(input);
+            HadError = false;
         }
     }
 
