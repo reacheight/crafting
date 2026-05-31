@@ -181,7 +181,7 @@ public class Lexer(string source)
         if (IsAtEnd || !predicate(Peek))
             return false;
 
-        current++;
+        Advance();
         return true;
     }
 }
