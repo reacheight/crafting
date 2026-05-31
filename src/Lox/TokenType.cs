@@ -1,6 +1,6 @@
 ﻿namespace Lox;
 
-public enum TokenType
+public enum NonLiteralTokenType
 {
     // Single-character tokens
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -12,12 +12,17 @@ public enum TokenType
     Greater, GreaterEqual,
     Less, LessEqual,
 
-    // Literals
-    Identifier, String, Number,
+    Identifier,
 
     // Keywords
     And, Class, Else, False, Fun, For, If, Nil, Or,
     Print, Return, Super, This, True, Var, While,
 
     Eof
+}
+
+public enum LiteralTokenType
+{
+    String,
+    Number
 }

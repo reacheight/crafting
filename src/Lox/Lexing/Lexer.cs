@@ -8,24 +8,24 @@ public class Lexer(string source)
     private int current = 0;
     private int line = 1;
 
-    private static readonly Dictionary<string, TokenType> keywordMap = new()
+    private static readonly Dictionary<string, NonLiteralTokenType> keywordMap = new()
     {
-        ["and"] = TokenType.And,
-        ["class"] = TokenType.Class,
-        ["else"] = TokenType.Else,
-        ["false"] = TokenType.False,
-        ["fun"] = TokenType.Fun,
-        ["for"] = TokenType.For,
-        ["if"] = TokenType.If,
-        ["nil"] = TokenType.Nil,
-        ["or"] = TokenType.Or,
-        ["print"] = TokenType.Print,
-        ["return"] = TokenType.Return,
-        ["super"] = TokenType.Super,
-        ["this"] = TokenType.This,
-        ["true"] = TokenType.True,
-        ["var"] = TokenType.Var,
-        ["while"] = TokenType.While,
+        ["and"] = NonLiteralTokenType.And,
+        ["class"] = NonLiteralTokenType.Class,
+        ["else"] = NonLiteralTokenType.Else,
+        ["false"] = NonLiteralTokenType.False,
+        ["fun"] = NonLiteralTokenType.Fun,
+        ["for"] = NonLiteralTokenType.For,
+        ["if"] = NonLiteralTokenType.If,
+        ["nil"] = NonLiteralTokenType.Nil,
+        ["or"] = NonLiteralTokenType.Or,
+        ["print"] = NonLiteralTokenType.Print,
+        ["return"] = NonLiteralTokenType.Return,
+        ["super"] = NonLiteralTokenType.Super,
+        ["this"] = NonLiteralTokenType.This,
+        ["true"] = NonLiteralTokenType.True,
+        ["var"] = NonLiteralTokenType.Var,
+        ["while"] = NonLiteralTokenType.While,
     };
 
     public IEnumerable<Token> Tokenize()
@@ -41,7 +41,7 @@ public class Lexer(string source)
                 Runner.Error(line, $"[syntax error] {error.Message}");
         }
 
-        yield return new(TokenType.Eof, "", null, line);
+        yield return CreateToken(NonLiteralTokenType.Eof);
     }
 
     private LexingUnit ScanLexingUnit()
@@ -49,32 +49,32 @@ public class Lexer(string source)
         var currentChar = Advance();
         return currentChar switch
         {
-            '(' => CreateToken(TokenType.LeftParen),
-            ')' => CreateToken(TokenType.RightParen),
-            '{' => CreateToken(TokenType.LeftBrace),
-            '}' => CreateToken(TokenType.RightBrace),
-            ',' => CreateToken(TokenType.Comma),
-            '.' => CreateToken(TokenType.Dot),
-            '-' => CreateToken(TokenType.Minus),
-            '+' => CreateToken(TokenType.Plus),
-            ';' => CreateToken(TokenType.Semicolon),
-            '*' => CreateToken(TokenType.Star),
+            '(' => CreateToken(NonLiteralTokenType.LeftParen),
+            ')' => CreateToken(NonLiteralTokenType.RightParen),
+            '{' => CreateToken(NonLiteralTokenType.LeftBrace),
+            '}' => CreateToken(NonLiteralTokenType.RightBrace),
+            ',' => CreateToken(NonLiteralTokenType.Comma),
+            '.' => CreateToken(NonLiteralTokenType.Dot),
+            '-' => CreateToken(NonLiteralTokenType.Minus),
+            '+' => CreateToken(NonLiteralTokenType.Plus),
+            ';' => CreateToken(NonLiteralTokenType.Semicolon),
+            '*' => CreateToken(NonLiteralTokenType.Star),
 
             '!' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.BangEqual
-                    : TokenType.Bang),
+                    ? NonLiteralTokenType.BangEqual
+                    : NonLiteralTokenType.Bang),
             '=' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.EqualEqual
-                    : TokenType.Equal),
+                    ? NonLiteralTokenType.EqualEqual
+                    : NonLiteralTokenType.Equal),
             '>' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.GreaterEqual
-                    : TokenType.Greater),
+                    ? NonLiteralTokenType.GreaterEqual
+                    : NonLiteralTokenType.Greater),
             '<' => CreateToken(AdvanceIfMatch('=')
-                    ? TokenType.LessEqual
-                    : TokenType.Less),
+                    ? NonLiteralTokenType.LessEqual
+                    : NonLiteralTokenType.Less),
 
             '/' when AdvanceIfMatch('/') => ScanComment(),
-            '/' => CreateToken(TokenType.Slash),
+            '/' => CreateToken(NonLiteralTokenType.Slash),
 
             ' ' or '\r' or '\t' => ScanWhitespace(),
             '\n' => ScanNewline(),
@@ -97,7 +97,7 @@ public class Lexer(string source)
         var text = GetCurrentTokenText();
         return CreateToken(keywordMap.TryGetValue(text, out var keywordType)
                 ? keywordType
-                : TokenType.Identifier);
+                : NonLiteralTokenType.Identifier);
     }
 
     private Token ScanNumber()
@@ -111,7 +111,7 @@ public class Lexer(string source)
         }
 
         var val = double.Parse(GetCurrentTokenText(), CultureInfo.InvariantCulture);
-        return CreateToken(TokenType.Number, new(val));
+        return CreateToken(LiteralTokenType.Number, new(val));
 
         void ScanDigits()
         {
@@ -136,11 +136,14 @@ public class Lexer(string source)
         Advance();
 
         var val = GetCurrentTokenText(1, -1);
-        return CreateToken(TokenType.String, new(val));
+        return CreateToken(LiteralTokenType.String, new(val));
     }
 
-    private Token CreateToken(TokenType type, TokenLiteral? literal = null)
-        => new(type, GetCurrentTokenText(), literal, line);
+    private Token CreateToken(NonLiteralTokenType type)
+        => new(GetCurrentTokenText(), line, new(type));
+
+    private Token CreateToken(LiteralTokenType type, TokenLiteral literal)
+        => new(GetCurrentTokenText(), line, new(new LiteralToken(type, literal)));
 
     private Comment ScanComment()
     {
