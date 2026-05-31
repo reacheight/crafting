@@ -1,4 +1,4 @@
-#pragma warning disable CS8509 // until union exhaustiveness is not here
+#pragma warning disable CS8509 // until union exhaustiveness is here
 
 namespace Lox.Parsing;
 
