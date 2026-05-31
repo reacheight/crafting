@@ -56,6 +56,8 @@ public class Lexer(string source)
         '+' => CreateToken(NonLiteralTokenType.Plus),
         ';' => CreateToken(NonLiteralTokenType.Semicolon),
         '*' => CreateToken(NonLiteralTokenType.Star),
+        ':' => CreateToken(NonLiteralTokenType.Colon),
+        '?' => CreateToken(NonLiteralTokenType.Question),
 
         '!' => CreateToken(AdvanceIfMatch('=')
                 ? NonLiteralTokenType.BangEqual

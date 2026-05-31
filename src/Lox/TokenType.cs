@@ -3,8 +3,8 @@
 public enum NonLiteralTokenType
 {
     // Single-character tokens
-    LeftParen, RightParen, LeftBrace, RightBrace,
-    Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
+    LeftParen, RightParen, LeftBrace, RightBrace, Colon,
+    Comma, Dot, Minus, Plus, Semicolon, Slash, Star, Question,
 
     // One or two character tokens
     Bang, BangEqual,

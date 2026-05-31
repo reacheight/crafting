@@ -37,7 +37,22 @@ public class Parser(List<Token> tokens)
         }
     }
 
-    private Expr Expression() => Equality();
+    private Expr Expression() => Ternary();
+
+    private Expr Ternary()
+    {
+        var expr = Equality();
+
+        if (AdvanceIfMatch(NonLiteralTokenType.Question))
+        {
+            var onTrue = Ternary();
+            Consume(NonLiteralTokenType.Colon, "Expect ':' in a ternary expression.");
+            var onFalse = Ternary();
+            expr = new Ternary(expr, onTrue, onFalse);
+        }
+
+        return expr;
+    }
 
     private Expr Equality() => ParseBinaryExpr(Comparison, NonLiteralTokenType.EqualEqual, NonLiteralTokenType.BangEqual);
 
