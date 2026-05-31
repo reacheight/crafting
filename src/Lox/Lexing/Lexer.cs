@@ -44,54 +44,50 @@ public class Lexer(string source)
         yield return CreateToken(NonLiteralTokenType.Eof);
     }
 
-    private LexingUnit ScanLexingUnit()
+    private LexingUnit ScanLexingUnit() => Advance() switch
     {
-        var currentChar = Advance();
-        return currentChar switch
-        {
-            '(' => CreateToken(NonLiteralTokenType.LeftParen),
-            ')' => CreateToken(NonLiteralTokenType.RightParen),
-            '{' => CreateToken(NonLiteralTokenType.LeftBrace),
-            '}' => CreateToken(NonLiteralTokenType.RightBrace),
-            ',' => CreateToken(NonLiteralTokenType.Comma),
-            '.' => CreateToken(NonLiteralTokenType.Dot),
-            '-' => CreateToken(NonLiteralTokenType.Minus),
-            '+' => CreateToken(NonLiteralTokenType.Plus),
-            ';' => CreateToken(NonLiteralTokenType.Semicolon),
-            '*' => CreateToken(NonLiteralTokenType.Star),
+        '(' => CreateToken(NonLiteralTokenType.LeftParen),
+        ')' => CreateToken(NonLiteralTokenType.RightParen),
+        '{' => CreateToken(NonLiteralTokenType.LeftBrace),
+        '}' => CreateToken(NonLiteralTokenType.RightBrace),
+        ',' => CreateToken(NonLiteralTokenType.Comma),
+        '.' => CreateToken(NonLiteralTokenType.Dot),
+        '-' => CreateToken(NonLiteralTokenType.Minus),
+        '+' => CreateToken(NonLiteralTokenType.Plus),
+        ';' => CreateToken(NonLiteralTokenType.Semicolon),
+        '*' => CreateToken(NonLiteralTokenType.Star),
 
-            '!' => CreateToken(AdvanceIfMatch('=')
-                    ? NonLiteralTokenType.BangEqual
-                    : NonLiteralTokenType.Bang),
-            '=' => CreateToken(AdvanceIfMatch('=')
-                    ? NonLiteralTokenType.EqualEqual
-                    : NonLiteralTokenType.Equal),
-            '>' => CreateToken(AdvanceIfMatch('=')
-                    ? NonLiteralTokenType.GreaterEqual
-                    : NonLiteralTokenType.Greater),
-            '<' => CreateToken(AdvanceIfMatch('=')
-                    ? NonLiteralTokenType.LessEqual
-                    : NonLiteralTokenType.Less),
+        '!' => CreateToken(AdvanceIfMatch('=')
+                ? NonLiteralTokenType.BangEqual
+                : NonLiteralTokenType.Bang),
+        '=' => CreateToken(AdvanceIfMatch('=')
+                ? NonLiteralTokenType.EqualEqual
+                : NonLiteralTokenType.Equal),
+        '>' => CreateToken(AdvanceIfMatch('=')
+                ? NonLiteralTokenType.GreaterEqual
+                : NonLiteralTokenType.Greater),
+        '<' => CreateToken(AdvanceIfMatch('=')
+                ? NonLiteralTokenType.LessEqual
+                : NonLiteralTokenType.Less),
 
-            '/' when AdvanceIfMatch('/') => ScanComment(),
-            '/' => CreateToken(NonLiteralTokenType.Slash),
+        '/' when AdvanceIfMatch('/') => ScanComment(),
+        '/' => CreateToken(NonLiteralTokenType.Slash),
 
-            ' ' or '\r' or '\t' => ScanWhitespace(),
-            '\n' => ScanNewline(),
+        ' ' or '\r' or '\t' => ScanWhitespace(),
+        '\n' => ScanNewline(),
 
-            '"' => ScanString(),
+        '"' => ScanString(),
 
-            _ when char.IsDigit(currentChar) => ScanNumber(),
+        var currentChar when char.IsDigit(currentChar) => ScanNumber(),
 
-            _ when char.IsLetter(currentChar) || currentChar == '_' => ScanIdentifierOrKeyword(),
+        var currentChar when char.IsLetter(currentChar) || currentChar == '_' => ScanIdentifierOrKeyword(),
 
-            _ => new SyntaxError($"Unexpected character: {currentChar}"),
-        };
-    }
+        var currentChar => new SyntaxError($"Unexpected character: {currentChar}"),
+    };
 
     private Token ScanIdentifierOrKeyword()
     {
-        while (char.IsLetterOrDigit(Peek()) || Peek() == '_')
+        while (char.IsLetterOrDigit(Peek) || Peek == '_')
             Advance();
 
         var text = GetCurrentTokenText();
@@ -104,7 +100,7 @@ public class Lexer(string source)
     {
         ScanDigits();
 
-        if (Peek() == '.' && char.IsDigit(Peek(1)))
+        if (Peek == '.' && char.IsDigit(Next))
         {
             Advance();
             ScanDigits();
@@ -115,16 +111,16 @@ public class Lexer(string source)
 
         void ScanDigits()
         {
-            while (char.IsDigit(Peek()))
+            while (char.IsDigit(Peek))
                 Advance();
         }
     }
 
     private LexingUnit ScanString()
     {
-        while (!IsAtEnd && Peek() != '"')
+        while (!IsAtEnd && Peek != '"')
         {
-            if (Peek() == '\n')
+            if (Peek == '\n')
                 ScanNewline();
 
             Advance();
@@ -147,7 +143,7 @@ public class Lexer(string source)
 
     private Comment ScanComment()
     {
-        while (!IsAtEnd && Peek() != '\n')
+        while (!IsAtEnd && Peek != '\n')
             Advance();
 
         return new();
@@ -155,7 +151,7 @@ public class Lexer(string source)
 
     private Whitespace ScanWhitespace()
     {
-        while (Peek() is ' ' or '\r' or '\t')
+        while (Peek is ' ' or '\r' or '\t')
             Advance();
 
         return new();
@@ -173,14 +169,16 @@ public class Lexer(string source)
         => source[(start + startOffset)..(current + currentOffset)];
 
     private char Advance() => source[current++];
-    private char Peek(int offset = 0) => source.ElementAtOrDefault(current + offset);
+
+    private char Peek => source.ElementAtOrDefault(current);
+    private char Next => source.ElementAtOrDefault(current + 1);
 
     private bool AdvanceIfMatch(char expected)
         => AdvanceIfMatch(c => c == expected);
 
     private bool AdvanceIfMatch(Predicate<char> predicate)
     {
-        if (IsAtEnd || !predicate(Peek()))
+        if (IsAtEnd || !predicate(Peek))
             return false;
 
         current++;
