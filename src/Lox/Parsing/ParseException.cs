@@ -1,12 +1,8 @@
-﻿namespace Lox;
+﻿#pragma warning disable RCS1194
 
-public class ParseException : Exception
+namespace Lox.Parsing;
+
+public class ParseException(Token token, string message) : Exception(message)
 {
-    public ParseException()
-    {
-    }
-
-    public ParseException(string? message) : base(message)
-    {
-    }
+    public Token Token { get; init; } = token;
 }

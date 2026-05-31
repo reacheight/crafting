@@ -30,8 +30,9 @@ public class Parser(List<Token> tokens)
         {
             return Expression();
         }
-        catch
+        catch (ParseException parseException)
         {
+            Runner.ReportError(parseException.Token, parseException.Message);
             return null;
         }
     }
@@ -50,73 +51,70 @@ public class Parser(List<Token> tokens)
     {
         var expr = parseOperand();
 
-        while (MatchNonLiteral(operatorTypes))
+        while (AdvanceIfMatch(operatorTypes))
             expr = new BinaryExpr(expr, tokenToBinaryOperator[Previous.Type], parseOperand());
 
         return expr;
     }
 
-    private Expr Unary() => MatchNonLiteral(NonLiteralTokenType.Bang, NonLiteralTokenType.Minus)
+    private Expr Unary() => AdvanceIfMatch(NonLiteralTokenType.Bang, NonLiteralTokenType.Minus)
             ? new UnaryExpr(tokenToUnaryOperator[Previous.Type], Unary())
             : Primary();
 
     private Expr Primary()
     {
-        if (MatchNonLiteral(NonLiteralTokenType.True))
+        if (AdvanceIfMatch(NonLiteralTokenType.True))
             return new Literal(true);
 
-        if (MatchNonLiteral(NonLiteralTokenType.False))
+        if (AdvanceIfMatch(NonLiteralTokenType.False))
             return new Literal(false);
 
-        if (MatchNonLiteral(NonLiteralTokenType.Nil))
+        if (AdvanceIfMatch(NonLiteralTokenType.Nil))
             return new Literal(new Nil());
 
-        if (Peek.Type is LiteralToken peekLiteralToken)
+        if (AdvanceIfLiteral() is LiteralToken literal)
         {
-            Advance();
-            return peekLiteralToken.Literal switch
+            return literal.Literal switch
             {
                 string s => new Literal(s),
                 double n => new Literal(n),
             };
         }
 
-        if (MatchNonLiteral(NonLiteralTokenType.LeftParen))
+        if (AdvanceIfMatch(NonLiteralTokenType.LeftParen))
         {
             var expr = Expression();
             Consume(NonLiteralTokenType.RightParen, "Expect ')' after expression.");
             return new Grouping(expr);
         }
 
-        throw ReportAndCreateException(Peek, "Expect expression.");
+        throw new ParseException(Peek, "Expect expression.");
     }
 
     private Token Consume(NonLiteralTokenType type, string errorMessage)
     {
-        if (IsAtNonLiteralToken(type))
+        if (IsAt(type))
             return Advance();
 
-        throw ReportAndCreateException(Peek, errorMessage);
+        throw new ParseException(Peek, errorMessage);
     }
 
-    private static ParseException ReportAndCreateException(Token token, string message)
+    private bool AdvanceIfMatch(params IEnumerable<NonLiteralTokenType> types)
     {
-        Runner.ReportError(token, message);
-        return new ParseException(message);
+        if (!types.Any(IsAt))
+            return false;
+
+        Advance();
+        return true;
     }
 
-    private bool MatchNonLiteral(params IEnumerable<NonLiteralTokenType> types)
+    private LiteralToken? AdvanceIfLiteral()
     {
-        foreach (var type in types)
-        {
-            if (IsAtNonLiteralToken(type))
-            {
-                Advance();
-                return true;
-            }
-        }
+        if (Peek.Type is not LiteralToken peekLiteral)
+            return null;
 
-        return false;
+        Advance();
+        return peekLiteral;
     }
 
     private Token Advance()
@@ -126,10 +124,11 @@ public class Parser(List<Token> tokens)
         return Previous;
     }
 
-    private bool IsAtNonLiteralToken(NonLiteralTokenType type)
+    private bool IsAtEnd => IsAt(NonLiteralTokenType.Eof);
+
+    private bool IsAt(NonLiteralTokenType type)
         => Peek.Type is NonLiteralTokenType peekType && type == peekType;
 
-    private bool IsAtEnd => IsAtNonLiteralToken(NonLiteralTokenType.Eof);
     private Token Peek => tokens[current];
     private Token Previous => tokens[current - 1];
 }
