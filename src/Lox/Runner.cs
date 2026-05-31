@@ -20,8 +20,8 @@ public static class Runner
             Console.Write("> ");
 
             var input = Console.ReadLine();
-            if (input is null)
-                return;
+            if (input is null or "exit")
+                break;
 
             Run(input);
             HadError = false;
