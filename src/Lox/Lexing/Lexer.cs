@@ -38,7 +38,7 @@ public class Lexer(string source)
             if (lexingUnit is Token token)
                 yield return token;
             else if (lexingUnit is SyntaxError error)
-                Runner.Error(line, $"[syntax error] {error.Message}");
+                Runner.ReportError(line, $"[syntax error] {error.Message}");
         }
 
         yield return CreateToken(NonLiteralTokenType.Eof);

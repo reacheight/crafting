@@ -101,7 +101,7 @@ public class Parser(List<Token> tokens)
 
     private static ParseException ReportAndCreateException(Token token, string message)
     {
-        Runner.Error(token, message);
+        Runner.ReportError(token, message);
         return new ParseException(message);
     }
 
