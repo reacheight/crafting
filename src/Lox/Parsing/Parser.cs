@@ -1,28 +1,10 @@
-﻿namespace Lox.Parsing;
+﻿using Lox.Lexing;
+
+namespace Lox.Parsing;
 
 public class Parser(List<Token> tokens)
 {
     private int current = 0;
-
-    private static readonly Dictionary<TokenType, BinaryOperator> tokenToBinaryOperator = new()
-    {
-        [NonLiteralTokenType.BangEqual] = new NotEqual(),
-        [NonLiteralTokenType.EqualEqual] = new Equal(),
-        [NonLiteralTokenType.Less] = new Less(),
-        [NonLiteralTokenType.LessEqual] = new LessEqual(),
-        [NonLiteralTokenType.Greater] = new Greater(),
-        [NonLiteralTokenType.GreaterEqual] = new GreaterEqual(),
-        [NonLiteralTokenType.Plus] = new Add(),
-        [NonLiteralTokenType.Minus] = new Substract(),
-        [NonLiteralTokenType.Slash] = new Divide(),
-        [NonLiteralTokenType.Star] = new Multiply(),
-    };
-
-    private static readonly Dictionary<TokenType, UnaryOperator> tokenToUnaryOperator = new()
-    {
-        [NonLiteralTokenType.Minus] = new Negate(),
-        [NonLiteralTokenType.Bang] = new Not(),
-    };
 
     public Expr? Parse()
     {
@@ -43,10 +25,10 @@ public class Parser(List<Token> tokens)
     {
         var expr = Equality();
 
-        if (AdvanceIfMatch(NonLiteralTokenType.Question))
+        if (AdvanceIfMatch(new Question()))
         {
             var onTrue = Ternary();
-            Consume(NonLiteralTokenType.Colon, "Expect ':' in a ternary expression.");
+            Consume(new Colon(), "Expect ':' in a ternary expression.");
             var onFalse = Ternary();
             expr = new Ternary(expr, onTrue, onFalse);
         }
@@ -54,59 +36,81 @@ public class Parser(List<Token> tokens)
         return expr;
     }
 
-    private Expr Equality() => ParseBinaryExpr(Comparison, NonLiteralTokenType.EqualEqual, NonLiteralTokenType.BangEqual);
+    private Expr Equality() => ParseBinaryExpr(Comparison, new EqualEqual(), new BangEqual());
 
-    private Expr Comparison() => ParseBinaryExpr(Term, NonLiteralTokenType.Less, NonLiteralTokenType.LessEqual, NonLiteralTokenType.Greater, NonLiteralTokenType.GreaterEqual);
+    private Expr Comparison() => ParseBinaryExpr(Term, new Lexing.Less(), new Lexing.LessEqual(), new Lexing.Greater(), new Lexing.GreaterEqual());
 
-    private Expr Term() => ParseBinaryExpr(Factor, NonLiteralTokenType.Plus, NonLiteralTokenType.Minus);
+    private Expr Term() => ParseBinaryExpr(Factor, new Plus(), new Minus());
 
-    private Expr Factor() => ParseBinaryExpr(Unary, NonLiteralTokenType.Star, NonLiteralTokenType.Slash);
+    private Expr Factor() => ParseBinaryExpr(Unary, new Star(), new Slash());
 
-    private Expr ParseBinaryExpr(Func<Expr> parseOperand, params NonLiteralTokenType[] operatorTypes)
+    private Expr ParseBinaryExpr(Func<Expr> parseOperand, params TokenType[] operatorTypes)
     {
         var expr = parseOperand();
 
         while (AdvanceIfMatch(operatorTypes))
-            expr = new BinaryExpr(expr, tokenToBinaryOperator[Previous.Type], parseOperand());
+            expr = new BinaryExpr(expr, ToBinaryOperator(Previous.Type), parseOperand());
 
         return expr;
     }
 
-    private Expr Unary() => AdvanceIfMatch(NonLiteralTokenType.Bang, NonLiteralTokenType.Minus)
-            ? new UnaryExpr(tokenToUnaryOperator[Previous.Type], Unary())
-            : Primary();
+    private Expr Unary() => AdvanceIfMatch(new Bang(), new Minus())
+        ? new UnaryExpr(ToUnaryOperator(Previous.Type), Unary())
+        : Primary();
 
     private Expr Primary()
     {
-        if (AdvanceIfMatch(NonLiteralTokenType.True))
+        if (AdvanceIfMatch(new True()))
             return new Literal(true);
 
-        if (AdvanceIfMatch(NonLiteralTokenType.False))
+        if (AdvanceIfMatch(new False()))
             return new Literal(false);
 
-        if (AdvanceIfMatch(NonLiteralTokenType.Nil))
+        if (AdvanceIfMatch(new Lexing.Nil()))
             return new Literal(new Nil());
 
-        if (AdvanceIfLiteral() is LiteralToken literal)
+        if (AdvanceIfLiteral() is var literal and not null)
         {
-            return literal.Literal switch
+            return literal switch
             {
-                string s => new Literal(s),
-                double n => new Literal(n),
+                StringLiteralToken strLiteral => new Literal(strLiteral.Value),
+                NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
             };
         }
 
-        if (AdvanceIfMatch(NonLiteralTokenType.LeftParen))
+        if (AdvanceIfMatch(new LeftParen()))
         {
             var expr = Expression();
-            Consume(NonLiteralTokenType.RightParen, "Expect ')' after expression.");
+            Consume(new RightParen(), "Expect ')' after expression.");
             return new Grouping(expr);
         }
 
         throw new ParseException(Peek, "Expect expression.");
     }
 
-    private Token Consume(NonLiteralTokenType type, string errorMessage)
+#pragma warning disable CS8509
+    private static BinaryOperator ToBinaryOperator(TokenType type) => type switch
+    {
+        EqualEqual => new Equal(),
+        BangEqual => new NotEqual(),
+        Lexing.Less => new Less(),
+        Lexing.LessEqual => new LessEqual(),
+        Lexing.Greater => new Greater(),
+        Lexing.GreaterEqual => new GreaterEqual(),
+        Plus => new Add(),
+        Minus => new Substract(),
+        Slash => new Divide(),
+        Star => new Multiply(),
+    };
+
+    private static UnaryOperator ToUnaryOperator(TokenType type) => type switch
+    {
+        Minus => new Negate(),
+        Bang => new Not(),
+    };
+#pragma warning restore CS8509
+
+    private Token Consume(TokenType type, string errorMessage)
     {
         if (IsAt(type))
             return Advance();
@@ -114,7 +118,7 @@ public class Parser(List<Token> tokens)
         throw new ParseException(Peek, errorMessage);
     }
 
-    private bool AdvanceIfMatch(params IEnumerable<NonLiteralTokenType> types)
+    private bool AdvanceIfMatch(params IEnumerable<TokenType> types)
     {
         if (!types.Any(IsAt))
             return false;
@@ -139,10 +143,10 @@ public class Parser(List<Token> tokens)
         return Previous;
     }
 
-    private bool IsAtEnd => IsAt(NonLiteralTokenType.Eof);
+    private bool IsAtEnd => IsAt(new Eof());
 
-    private bool IsAt(NonLiteralTokenType type)
-        => Peek.Type is NonLiteralTokenType peekType && type == peekType;
+    private bool IsAt(TokenType type)
+        => Peek.Type.Value.Equals(type.Value);
 
     private Token Peek => tokens[current];
     private Token Previous => tokens[current - 1];

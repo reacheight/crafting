@@ -8,24 +8,24 @@ public class Lexer(string source)
     private int current = 0;
     private int line = 1;
 
-    private static readonly Dictionary<string, NonLiteralTokenType> keywordMap = new()
+    private static readonly Dictionary<string, TokenType> keywordMap = new()
     {
-        ["and"] = NonLiteralTokenType.And,
-        ["class"] = NonLiteralTokenType.Class,
-        ["else"] = NonLiteralTokenType.Else,
-        ["false"] = NonLiteralTokenType.False,
-        ["fun"] = NonLiteralTokenType.Fun,
-        ["for"] = NonLiteralTokenType.For,
-        ["if"] = NonLiteralTokenType.If,
-        ["nil"] = NonLiteralTokenType.Nil,
-        ["or"] = NonLiteralTokenType.Or,
-        ["print"] = NonLiteralTokenType.Print,
-        ["return"] = NonLiteralTokenType.Return,
-        ["super"] = NonLiteralTokenType.Super,
-        ["this"] = NonLiteralTokenType.This,
-        ["true"] = NonLiteralTokenType.True,
-        ["var"] = NonLiteralTokenType.Var,
-        ["while"] = NonLiteralTokenType.While,
+        ["and"] = new And(),
+        ["class"] = new Class(),
+        ["else"] = new Else(),
+        ["false"] = new False(),
+        ["fun"] = new Fun(),
+        ["for"] = new For(),
+        ["if"] = new If(),
+        ["nil"] = new Nil(),
+        ["or"] = new Or(),
+        ["print"] = new Print(),
+        ["return"] = new Return(),
+        ["super"] = new Super(),
+        ["this"] = new This(),
+        ["true"] = new True(),
+        ["var"] = new Var(),
+        ["while"] = new While(),
     };
 
     public IEnumerable<Token> Tokenize()
@@ -41,39 +41,39 @@ public class Lexer(string source)
                 Runner.ReportError(line, $"[syntax error] {error.Message}");
         }
 
-        yield return CreateToken(NonLiteralTokenType.Eof);
+        yield return CreateToken(new(new Eof()));
     }
 
     private LexingUnit ScanLexingUnit() => Advance() switch
     {
-        '(' => CreateToken(NonLiteralTokenType.LeftParen),
-        ')' => CreateToken(NonLiteralTokenType.RightParen),
-        '{' => CreateToken(NonLiteralTokenType.LeftBrace),
-        '}' => CreateToken(NonLiteralTokenType.RightBrace),
-        ',' => CreateToken(NonLiteralTokenType.Comma),
-        '.' => CreateToken(NonLiteralTokenType.Dot),
-        '-' => CreateToken(NonLiteralTokenType.Minus),
-        '+' => CreateToken(NonLiteralTokenType.Plus),
-        ';' => CreateToken(NonLiteralTokenType.Semicolon),
-        '*' => CreateToken(NonLiteralTokenType.Star),
-        ':' => CreateToken(NonLiteralTokenType.Colon),
-        '?' => CreateToken(NonLiteralTokenType.Question),
+        '(' => CreateToken(new LeftParen()),
+        ')' => CreateToken(new RightParen()),
+        '{' => CreateToken(new LeftBrace()),
+        '}' => CreateToken(new RightBrace()),
+        ',' => CreateToken(new Comma()),
+        '.' => CreateToken(new Dot()),
+        '-' => CreateToken(new Minus()),
+        '+' => CreateToken(new Plus()),
+        ';' => CreateToken(new Semicolon()),
+        '*' => CreateToken(new Star()),
+        ':' => CreateToken(new Colon()),
+        '?' => CreateToken(new Question()),
 
         '!' => CreateToken(AdvanceIfMatch('=')
-                ? NonLiteralTokenType.BangEqual
-                : NonLiteralTokenType.Bang),
+            ? new BangEqual()
+            : new Bang()),
         '=' => CreateToken(AdvanceIfMatch('=')
-                ? NonLiteralTokenType.EqualEqual
-                : NonLiteralTokenType.Equal),
+            ? new EqualEqual()
+            : new Equal()),
         '>' => CreateToken(AdvanceIfMatch('=')
-                ? NonLiteralTokenType.GreaterEqual
-                : NonLiteralTokenType.Greater),
+            ? new GreaterEqual()
+            : new Greater()),
         '<' => CreateToken(AdvanceIfMatch('=')
-                ? NonLiteralTokenType.LessEqual
-                : NonLiteralTokenType.Less),
+            ? new LessEqual()
+            : new Less()),
 
         '/' when AdvanceIfMatch('/') => ScanComment(),
-        '/' => CreateToken(NonLiteralTokenType.Slash),
+        '/' => CreateToken(new Slash()),
 
         ' ' or '\r' or '\t' => ScanWhitespace(),
         '\n' => ScanNewline(),
@@ -94,8 +94,8 @@ public class Lexer(string source)
 
         var text = GetCurrentTokenText();
         return CreateToken(keywordMap.TryGetValue(text, out var keywordType)
-                ? keywordType
-                : NonLiteralTokenType.Identifier);
+            ? keywordType
+            : new Identifier());
     }
 
     private Token ScanNumber()
@@ -109,7 +109,7 @@ public class Lexer(string source)
         }
 
         var val = double.Parse(GetCurrentTokenText(), CultureInfo.InvariantCulture);
-        return CreateToken(LiteralTokenType.Number, new(val));
+        return CreateToken(new(new NumberLiterlToken(val)));
 
         void ScanDigits()
         {
@@ -134,14 +134,11 @@ public class Lexer(string source)
         Advance();
 
         var val = GetCurrentTokenText(1, -1);
-        return CreateToken(LiteralTokenType.String, new(val));
+        return CreateToken(new(new StringLiteralToken(val)));
     }
 
-    private Token CreateToken(NonLiteralTokenType type)
-        => new(GetCurrentTokenText(), line, new(type));
-
-    private Token CreateToken(LiteralTokenType type, TokenLiteral literal)
-        => new(GetCurrentTokenText(), line, new(new LiteralToken(type, literal)));
+    private Token CreateToken(TokenType type)
+        => new(GetCurrentTokenText(), line, type);
 
     private Comment ScanComment()
     {

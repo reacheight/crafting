@@ -48,7 +48,7 @@ public static class Runner
 
     public static void ReportError(Token token, string message)
     {
-        if (token.Type is NonLiteralTokenType.Eof)
+        if (token.Type is Eof)
             ReportError(token.Line, " at end", message);
         else
             ReportError(token.Line, $" at '{token.Lexeme}'", message);
