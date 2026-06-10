@@ -1,12 +1,10 @@
-#pragma warning disable CS8509 // until union exhaustiveness is here
-
 using System.Globalization;
 
 namespace Lox.Parsing;
 
 public readonly union LoxValue(string, double, bool, Nil)
 {
-    public override string ToString() => Value switch
+    public override string ToString() => this switch
     {
         Nil => "nil",
         string s => s,

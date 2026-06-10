@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS8509 // until union exhaustiveness is here
-
-namespace Lox.Parsing;
+﻿namespace Lox.Parsing;
 
 public readonly union BinaryOperator(
     Add, Substract, Multiply, Divide,
@@ -8,7 +6,7 @@ public readonly union BinaryOperator(
     Equal, NotEqual
 )
 {
-    public override string ToString() => Value switch
+    public override string ToString() => this switch
     {
         Add => "+",
         Substract => "-",

@@ -1,10 +1,8 @@
-﻿#pragma warning disable CS8509 // until union exhaustiveness is here
-
-namespace Lox.Parsing;
+﻿namespace Lox.Parsing;
 
 public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping, Ternary)
 {
-    public override string ToString() => Value switch
+    public override string ToString() => this switch
     {
         Literal literal => literal.Value.ToString(),
         UnaryExpr unary => $"({unary.Operator} {unary.Expr})",

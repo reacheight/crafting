@@ -1,10 +1,8 @@
-#pragma warning disable CS8509 // until union exhaustiveness is here
-
 namespace Lox.Parsing;
 
 public readonly union UnaryOperator(Not, Negate)
 {
-    public override string ToString() => Value switch
+    public override string ToString() => this switch
     {
         Negate => "-",
         Not => "!",
