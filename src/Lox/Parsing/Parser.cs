@@ -14,6 +14,7 @@ public class Parser(List<Token> tokens)
         }
         catch (ParseException parseException)
         {
+            // TODO: return Union of Expr / SyntaxError
             Runner.ReportError(parseException.Token, parseException.Message);
             return null;
         }
