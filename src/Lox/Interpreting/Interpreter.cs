@@ -4,7 +4,19 @@ namespace Lox.Interpreting;
 
 public class Interpreter
 {
-    public LoxValue EvaluateExpr(Expr expr) => expr switch
+    public void Interpret(Expr expr)
+    {
+        try
+        {
+            var value = EvaluateExpr(expr);
+            Console.WriteLine(value);
+        }
+        catch (RuntimeException error)
+        {
+            Runner.ReportRuntimeError(error);
+        }
+    }
+    private LoxValue EvaluateExpr(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
         Grouping grouping => EvaluateExpr(grouping.Expr),
@@ -19,7 +31,9 @@ public class Interpreter
         return unary.Operator.Type switch
         {
             Not => !EvaluateAsBool(operandValue),
-            Negate => -(double)operandValue.Value,
+            Negate => operandValue is double num
+                ? -num
+                : throw new RuntimeException(unary.Operator.Token, "Operand must be a number."),
         };
     }
 
@@ -34,6 +48,7 @@ public class Interpreter
             {
                 (double leftNumber, double rightNumber) => leftNumber + rightNumber,
                 (string leftString, string rightString) => leftString + rightString,
+                _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or two strings."),
             },
             Substract => (double)leftValue.Value - (double)rightValue.Value,
             Divide => (double)leftValue.Value / (double)rightValue.Value,
@@ -44,8 +59,8 @@ public class Interpreter
             Less => (double)leftValue.Value < (double)rightValue.Value,
             LessEqual => (double)leftValue.Value <= (double)rightValue.Value,
 
-            Equal => leftValue.Value == rightValue.Value,
-            NotEqual => leftValue.Value != rightValue.Value,
+            Equal => leftValue.Value.Equals(rightValue.Value),
+            NotEqual => !leftValue.Value.Equals(rightValue.Value),
         };
     }
 

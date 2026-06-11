@@ -1,16 +1,26 @@
-﻿using Lox.Lexing;
+﻿using Lox.Interpreting;
+using Lox.Lexing;
 using Lox.Parsing;
 
 namespace Lox;
 
 public static class Runner
 {
-    public static bool HadError { get; private set; }
+    private static bool HadSyntaxError { get; set; }
+    private static bool HadRuntimeError { get; set; }
+
+    private static readonly Interpreter interpreter = new();
 
     public static async Task RunFileAsync(string path)
     {
         var source = await File.ReadAllTextAsync(path);
         Run(source);
+
+        if (HadSyntaxError)
+            Environment.Exit(65);
+
+        if (HadRuntimeError)
+            Environment.Exit(70);
     }
 
     public static void RunPrompt()
@@ -24,7 +34,7 @@ public static class Runner
                 break;
 
             Run(input);
-            HadError = false;
+            HadSyntaxError = false;
         }
     }
 
@@ -36,11 +46,11 @@ public static class Runner
         var parser = new Parser([.. tokens]);
         var expr = parser.Parse();
 
-        if (HadError)
+        if (HadSyntaxError)
             return;
 
         if (expr is not null)
-            Console.WriteLine(expr);
+            interpreter.Interpret(expr.Value);
     }
 
     public static void ReportError(int line, string message)
@@ -54,9 +64,15 @@ public static class Runner
             ReportError(token.Line, $" at '{token.Lexeme}'", message);
     }
 
+    public static void ReportRuntimeError(RuntimeException error)
+    {
+        Console.Error.WriteLine($"[line {error.Token.Line}] RuntimeError: {error.Message}");
+        HadRuntimeError = true;
+    }
+
     private static void ReportError(int line, string where, string message)
     {
-        Console.WriteLine($"[line {line}] Error{where}: {message}");
-        HadError = true;
+        Console.Error.WriteLine($"[line {line}] SyntaxError{where}: {message}");
+        HadSyntaxError = true;
     }
 }
