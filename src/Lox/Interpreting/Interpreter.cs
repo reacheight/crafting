@@ -16,7 +16,7 @@ public class Interpreter
     private LoxValue EvaluateUnary(UnaryExpr unary)
     {
         var operandValue = EvaluateExpr(unary.Expr);
-        return unary.Operator switch
+        return unary.Operator.Type switch
         {
             Not => !EvaluateAsBool(operandValue),
             Negate => -(double)operandValue.Value,
@@ -28,7 +28,7 @@ public class Interpreter
         var leftValue = EvaluateExpr(binary.Left);
         var rightValue = EvaluateExpr(binary.Right);
 
-        return binary.Operator switch
+        return binary.Operator.Type switch
         {
             Add => (leftValue, rightValue) switch
             {

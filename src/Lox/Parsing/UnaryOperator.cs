@@ -1,6 +1,10 @@
+using Lox.Lexing;
+
 namespace Lox.Parsing;
 
-public readonly union UnaryOperator(Not, Negate)
+public record UnaryOperator(UnaryOperatorType Type, Token Token);
+
+public readonly union UnaryOperatorType(Not, Negate)
 {
     public override string ToString() => this switch
     {

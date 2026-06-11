@@ -1,6 +1,10 @@
-﻿namespace Lox.Parsing;
+﻿using Lox.Lexing;
 
-public readonly union BinaryOperator(
+namespace Lox.Parsing;
+
+public record BinaryOperator(BinaryOperatorType Type, Token Token);
+
+public readonly union BinaryOperatorType(
     Add, Substract, Multiply, Divide,
     Less, LessEqual, Greater, GreaterEqual,
     Equal, NotEqual

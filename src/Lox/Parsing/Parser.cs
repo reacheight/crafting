@@ -49,32 +49,32 @@ public class Parser(List<Token> tokens)
         var expr = parseOperand();
 
         while (AdvanceIfMatch(operatorTypes))
-            expr = new BinaryExpr(expr, ToBinaryOperator(Previous.Type), parseOperand());
+            expr = new BinaryExpr(expr, new BinaryOperator(ToBinaryOperatorType(Previous.Type), Previous), parseOperand());
 
         return expr;
     }
 
     private Expr Unary() => AdvanceIfMatch(new Bang(), new Minus())
-        ? new UnaryExpr(ToUnaryOperator(Previous.Type), Unary())
+        ? new UnaryExpr(new(ToUnaryOperator(Previous.Type), Previous), Unary())
         : Primary();
 
     private Expr Primary()
     {
         if (AdvanceIfMatch(new True()))
-            return new Literal(true);
+            return new Literal(true, Previous);
 
         if (AdvanceIfMatch(new False()))
-            return new Literal(false);
+            return new Literal(false, Previous);
 
         if (AdvanceIfMatch(new Lexing.Nil()))
-            return new Literal(new Nil());
+            return new Literal(new Nil(), Previous);
 
         if (AdvanceIfLiteral() is var literal and not null)
         {
             return literal switch
             {
-                StringLiteralToken strLiteral => new Literal(strLiteral.Value),
-                NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
+                StringLiteralToken strLiteral => new Literal(strLiteral.Value, Previous),
+                NumberLiterlToken numLiteral => new Literal(numLiteral.Value, Previous),
             };
         }
 
@@ -89,7 +89,7 @@ public class Parser(List<Token> tokens)
     }
 
 #pragma warning disable CS8509
-    private static BinaryOperator ToBinaryOperator(TokenType type) => type switch
+    private static BinaryOperatorType ToBinaryOperatorType(TokenType type) => type switch
     {
         EqualEqual => new Equal(),
         BangEqual => new NotEqual(),
@@ -103,7 +103,7 @@ public class Parser(List<Token> tokens)
         Star => new Multiply(),
     };
 
-    private static UnaryOperator ToUnaryOperator(TokenType type) => type switch
+    private static UnaryOperatorType ToUnaryOperator(TokenType type) => type switch
     {
         Minus => new Negate(),
         Bang => new Not(),
