@@ -1,0 +1,1 @@
+this is me following along Robert Nystrom's book "Crafting Interpreters" in C# (tree-walk interpreter implementation). apart from learning about programming languages in this project I also try to experiment and exercise with C# 15 unions and kinda functional programming approach in C# in general.
