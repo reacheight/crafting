@@ -51,7 +51,9 @@ public class Interpreter
                 _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or at least on of them must be a string."),
             },
             Substract => ExecuteOnNumbers((l, r) => l - r),
-            Divide => ExecuteOnNumbers((l, r) => l / r),
+            Divide => ExecuteOnNumbers((l, r) => r == 0
+                ? throw new RuntimeException(binary.Operator.Token, "Division by zero.")
+                : l / r),
             Multiply => ExecuteOnNumbers((l, r) => l * r),
             Greater => ExecuteOnNumbers((l, r) => l > r),
             GreaterEqual => ExecuteOnNumbers((l, r) => l >= r),
