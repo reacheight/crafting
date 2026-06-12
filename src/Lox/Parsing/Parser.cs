@@ -66,7 +66,25 @@ public class Parser(List<Token> tokens)
         return new ExprStmt(expr);
     }
 
-    private Expr Expression() => Ternary();
+    private Expr Expression() => Assignment();
+
+    private Expr Assignment()
+    {
+        var expr = Ternary();
+
+        if (AdvanceIfMatch(new Lexing.Equal()))
+        {
+            var equal = Previous;
+            var val = Assignment();
+
+            if (expr.Value is Variable target)
+                return new AssignmentExpr(target.Identifier, val);
+
+            throw new ParseException(equal, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
 
     private Expr Ternary()
     {

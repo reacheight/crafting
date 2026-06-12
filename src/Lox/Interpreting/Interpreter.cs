@@ -59,7 +59,15 @@ public class Interpreter
         UnaryExpr unary => EvaluateUnary(unary),
         BinaryExpr binary => EvaluateBinary(binary),
         Ternary ternary => EvaluateTernary(ternary),
+        AssignmentExpr assignment => EvaluateAssignment(assignment),
     };
+
+    private LoxValue EvaluateAssignment(AssignmentExpr assignment)
+    {
+        var val = Evaluate(assignment.Value);
+        environment.AssignVariable(assignment.Target, val);
+        return val;
+    }
 
     private LoxValue EvaluateUnary(UnaryExpr unary)
     {
