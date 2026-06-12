@@ -35,13 +35,13 @@ public class Parser(List<Token> tokens)
     private Stmt VarDeclaration()
     {
         var identifier = Consume(new Identifier(), "Expect variable name after 'var'.");
-        if (AdvanceIfMatch(new Lexing.Equal()))
-        {
-            var initializer = Expression();
-            return new VarStmt(identifier, initializer);
-        }
+        var initializer = AdvanceIfMatch(new Lexing.Equal())
+            ? Expression()
+            : (Expr?)null;
 
-        return new VarStmt(identifier);
+        Consume(new Semicolon(), "Expect ';' after variable declaration.");
+
+        return new VarStmt(identifier, initializer);
     }
 
     private Stmt Statement()
