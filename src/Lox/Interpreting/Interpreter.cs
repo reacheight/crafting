@@ -47,8 +47,8 @@ public class Interpreter
             Add => (leftValue, rightValue) switch
             {
                 (double leftNumber, double rightNumber) => leftNumber + rightNumber,
-                (string leftString, string rightString) => leftString + rightString,
-                _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or two strings."),
+                (string, _) or (_, string) => $"{leftValue}{rightValue}",
+                _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or at least on of them must be a string."),
             },
             Substract => ExecuteOnNumbers((l, r) => l - r),
             Divide => ExecuteOnNumbers((l, r) => l / r),
