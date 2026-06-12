@@ -17,10 +17,10 @@ public static class Runner
         Run(source);
 
         if (HadSyntaxError)
-            Environment.Exit(65);
+            System.Environment.Exit(65);
 
         if (HadRuntimeError)
-            Environment.Exit(70);
+            System.Environment.Exit(70);
     }
 
     public static void RunPrompt()

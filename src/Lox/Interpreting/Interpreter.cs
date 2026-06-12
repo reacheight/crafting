@@ -6,6 +6,8 @@ public class Interpreter
 {
     private record struct Unit;
 
+    private readonly Environment environment = new();
+
     public void Interpret(LoxProgram program)
     {
         try
@@ -23,6 +25,7 @@ public class Interpreter
     {
         ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
         PrintStmt printStmt => ExecutePrintStmt(printStmt),
+        VarStmt varStmt => ExecuteVarStmt(varStmt),
     };
 
     private Unit ExecuteExprStmt(ExprStmt stmt)
@@ -38,9 +41,20 @@ public class Interpreter
         return new();
     }
 
+    private Unit ExecuteVarStmt(VarStmt stmt)
+    {
+        var val = stmt.Initializer.HasValue
+            ? Evaluate(stmt.Initializer.Value)
+            : new Nil();
+
+        environment.DefineVariable(stmt.Identifier.Lexeme, val);
+        return new();
+    }
+
     private LoxValue Evaluate(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
+        Variable variable => environment.GetVariableValue(variable.Identifier),
         Grouping grouping => Evaluate(grouping.Expr),
         UnaryExpr unary => EvaluateUnary(unary),
         BinaryExpr binary => EvaluateBinary(binary),
