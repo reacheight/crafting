@@ -44,13 +44,12 @@ public static class Runner
         var tokens = lexer.Tokenize();
 
         var parser = new Parser([.. tokens]);
-        var expr = parser.Parse();
+        var parseResult = parser.Parse();
 
-        if (HadSyntaxError)
+        if (HadSyntaxError || parseResult is not Expr expr)
             return;
 
-        if (expr is not null)
-            interpreter.Interpret(expr.Value);
+        interpreter.Interpret(expr);
     }
 
     public static void ReportError(int line, string message)

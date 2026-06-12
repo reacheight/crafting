@@ -6,17 +6,17 @@ public class Parser(List<Token> tokens)
 {
     private int current = 0;
 
-    public Expr? Parse()
+    public ParseResult Parse()
     {
         try
         {
             return Expression();
         }
+        // TODO: get rid of throwing exception ?
         catch (ParseException parseException)
         {
-            // TODO: return Union of Expr / SyntaxError
             Runner.ReportError(parseException.Token, parseException.Message);
-            return null;
+            return new ParseError(parseException.Token, parseException.Message);
         }
     }
 
