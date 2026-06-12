@@ -12,10 +12,7 @@ public class Parser(List<Token> tokens)
         {
             var statements = new List<Stmt>();
             while (!IsAtEnd)
-            {
-                var stmt = Statement();
-                statements.Add(stmt);
-            }
+                statements.Add(Declaration());
 
             return new LoxProgram(statements);
         }
@@ -25,6 +22,26 @@ public class Parser(List<Token> tokens)
             Runner.ReportError(parseException.Token, parseException.Message);
             return new ParseError(parseException.Token, parseException.Message);
         }
+    }
+
+    private Stmt Declaration()
+    {
+        if (AdvanceIfMatch(new Var()))
+            return VarDeclaration();
+
+        return Statement();
+    }
+
+    private Stmt VarDeclaration()
+    {
+        var identifier = Consume(new Identifier(), "Expect variable name after 'var'.");
+        if (AdvanceIfMatch(new Lexing.Equal()))
+        {
+            var initializer = Expression();
+            return new VarStmt(identifier, initializer);
+        }
+
+        return new VarStmt(identifier);
     }
 
     private Stmt Statement()
@@ -114,6 +131,9 @@ public class Parser(List<Token> tokens)
             Consume(new RightParen(), "Expect ')' after expression.");
             return new Grouping(expr);
         }
+
+        if (AdvanceIfMatch(new Identifier()))
+            return new Variable(Previous);
 
         throw new ParseException(Peek, "Expect expression.");
     }

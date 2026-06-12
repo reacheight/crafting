@@ -2,7 +2,7 @@
 
 namespace Lox.Parsing;
 
-public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping, Ternary)
+public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping, Ternary, Variable)
 {
     public override string ToString() => this switch
     {
@@ -11,6 +11,7 @@ public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping, Ternary)
         BinaryExpr binary => $"({binary.Operator.Type} {binary.Left} {binary.Right})",
         Grouping grouping => $"(group {grouping.Expr})",
         Ternary ternary => $"(ternary {ternary.Condition} ? {ternary.OnTrue} : {ternary.OnFalse})",
+        Variable variable => $"(var {variable.Identifier.Lexeme})",
     };
 }
 
@@ -19,3 +20,4 @@ public record UnaryExpr(UnaryOperator Operator, Expr Expr);
 public record BinaryExpr(Expr Left, BinaryOperator Operator, Expr Right);
 public record Grouping(Expr Expr);
 public record Ternary(Expr Condition, Expr OnTrue, Expr OnFalse);
+public record Variable(Token Identifier);

@@ -37,6 +37,7 @@ public class Interpreter
         Console.WriteLine(val);
         return new();
     }
+
     private LoxValue Evaluate(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
