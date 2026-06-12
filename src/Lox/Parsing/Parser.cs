@@ -10,7 +10,14 @@ public class Parser(List<Token> tokens)
     {
         try
         {
-            return Expression();
+            var statements = new List<Stmt>();
+            while (!IsAtEnd)
+            {
+                var stmt = Statement();
+                statements.Add(stmt);
+            }
+
+            return new LoxProgram(statements);
         }
         // TODO: get rid of throwing exception ?
         catch (ParseException parseException)
@@ -18,6 +25,28 @@ public class Parser(List<Token> tokens)
             Runner.ReportError(parseException.Token, parseException.Message);
             return new ParseError(parseException.Token, parseException.Message);
         }
+    }
+
+    private Stmt Statement()
+    {
+        if (AdvanceIfMatch(new Print()))
+            return PrintStatement();
+
+        return ExpressionStatement();
+    }
+
+    private Stmt PrintStatement()
+    {
+        var expr = Expression();
+        Consume(new Semicolon(), "Expect ';' after value.");
+        return new PrintStmt(expr);
+    }
+
+    private Stmt ExpressionStatement()
+    {
+        var expr = Expression();
+        Consume(new Semicolon(), "Expect ';' after expression.");
+        return new ExprStmt(expr);
     }
 
     private Expr Expression() => Ternary();

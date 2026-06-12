@@ -46,10 +46,10 @@ public static class Runner
         var parser = new Parser([.. tokens]);
         var parseResult = parser.Parse();
 
-        if (HadSyntaxError || parseResult is not Expr expr)
+        if (HadSyntaxError || parseResult is not LoxProgram program)
             return;
 
-        interpreter.Interpret(expr);
+        interpreter.Interpret(program);
     }
 
     public static void ReportError(int line, string message)

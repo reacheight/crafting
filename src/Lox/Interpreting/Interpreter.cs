@@ -4,22 +4,43 @@ namespace Lox.Interpreting;
 
 public class Interpreter
 {
-    public void Interpret(Expr expr)
+    private record struct Unit;
+
+    public void Interpret(LoxProgram program)
     {
         try
         {
-            var value = EvaluateExpr(expr);
-            Console.WriteLine(value);
+            foreach (var stmt in program.Statements)
+                Execute(stmt);
         }
         catch (RuntimeException error)
         {
             Runner.ReportRuntimeError(error);
         }
     }
-    private LoxValue EvaluateExpr(Expr expr) => expr switch
+
+    private Unit Execute(Stmt stmt) => stmt switch
+    {
+        ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
+        PrintStmt printStmt => ExecutePrintStmt(printStmt),
+    };
+
+    private Unit ExecuteExprStmt(ExprStmt stmt)
+    {
+        Evaluate(stmt.Expr);
+        return new();
+    }
+
+    private Unit ExecutePrintStmt(PrintStmt stmt)
+    {
+        var val = Evaluate(stmt.Expr);
+        Console.WriteLine(val);
+        return new();
+    }
+    private LoxValue Evaluate(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
-        Grouping grouping => EvaluateExpr(grouping.Expr),
+        Grouping grouping => Evaluate(grouping.Expr),
         UnaryExpr unary => EvaluateUnary(unary),
         BinaryExpr binary => EvaluateBinary(binary),
         Ternary ternary => EvaluateTernary(ternary),
@@ -27,7 +48,7 @@ public class Interpreter
 
     private LoxValue EvaluateUnary(UnaryExpr unary)
     {
-        var operandValue = EvaluateExpr(unary.Expr);
+        var operandValue = Evaluate(unary.Expr);
         return unary.Operator.Type switch
         {
             Not => !EvaluateAsBool(operandValue),
@@ -39,8 +60,8 @@ public class Interpreter
 
     private LoxValue EvaluateBinary(BinaryExpr binary)
     {
-        var leftValue = EvaluateExpr(binary.Left);
-        var rightValue = EvaluateExpr(binary.Right);
+        var leftValue = Evaluate(binary.Left);
+        var rightValue = Evaluate(binary.Right);
 
         return binary.Operator.Type switch
         {
@@ -74,9 +95,9 @@ public class Interpreter
     }
 
     private LoxValue EvaluateTernary(Ternary ternary)
-        => EvaluateAsBool(EvaluateExpr(ternary.Condition))
-            ? EvaluateExpr(ternary.OnTrue)
-            : EvaluateExpr(ternary.OnFalse);
+        => EvaluateAsBool(Evaluate(ternary.Condition))
+            ? Evaluate(ternary.OnTrue)
+            : Evaluate(ternary.OnFalse);
 
     private static bool EvaluateAsBool(LoxValue literal) => literal switch
     {
