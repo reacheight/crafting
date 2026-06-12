@@ -50,18 +50,25 @@ public class Interpreter
                 (string leftString, string rightString) => leftString + rightString,
                 _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or two strings."),
             },
-            Substract => (double)leftValue.Value - (double)rightValue.Value,
-            Divide => (double)leftValue.Value / (double)rightValue.Value,
-            Multiply => (double)leftValue.Value * (double)rightValue.Value,
-
-            Greater => (double)leftValue.Value > (double)rightValue.Value,
-            GreaterEqual => (double)leftValue.Value >= (double)rightValue.Value,
-            Less => (double)leftValue.Value < (double)rightValue.Value,
-            LessEqual => (double)leftValue.Value <= (double)rightValue.Value,
+            Substract => ExecuteOnNumbers((l, r) => l - r),
+            Divide => ExecuteOnNumbers((l, r) => l / r),
+            Multiply => ExecuteOnNumbers((l, r) => l * r),
+            Greater => ExecuteOnNumbers((l, r) => l > r),
+            GreaterEqual => ExecuteOnNumbers((l, r) => l >= r),
+            Less => ExecuteOnNumbers((l, r) => l < r),
+            LessEqual => ExecuteOnNumbers((l, r) => l <= r),
 
             Equal => leftValue.Value.Equals(rightValue.Value),
             NotEqual => !leftValue.Value.Equals(rightValue.Value),
         };
+
+        LoxValue ExecuteOnNumbers(Func<double, double, LoxValue> operation)
+        {
+            if (leftValue is double leftNum && rightValue is double rightNum)
+                return operation(leftNum, rightNum);
+
+            throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers.");
+        }
     }
 
     private LoxValue EvaluateTernary(Ternary ternary)
