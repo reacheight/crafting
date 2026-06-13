@@ -26,7 +26,19 @@ public class Interpreter
         ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
         PrintStmt printStmt => ExecutePrintStmt(printStmt),
         VarStmt varStmt => ExecuteVarStmt(varStmt),
+        Block block => ExecuteBlock(block.Statements),
     };
+
+    private Unit ExecuteBlock(List<Stmt> statements)
+    {
+        environment.EnterScope();
+
+        foreach (var stmt in statements)
+            Execute(stmt);
+
+        environment.ExitScope();
+        return new();
+    }
 
     private Unit ExecuteExprStmt(ExprStmt stmt)
     {

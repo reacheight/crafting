@@ -2,8 +2,9 @@ using Lox.Lexing;
 
 namespace Lox.Parsing;
 
-public readonly union Stmt(ExprStmt, PrintStmt, VarStmt);
+public readonly union Stmt(ExprStmt, PrintStmt, VarStmt, Block);
 
 public record ExprStmt(Expr Expr);
 public record PrintStmt(Expr Expr);
 public record VarStmt(Token Identifier, Expr? Initializer = null);
+public record Block(List<Stmt> Statements);

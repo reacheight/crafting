@@ -49,7 +49,19 @@ public class Parser(List<Token> tokens)
         if (AdvanceIfMatch(new Print()))
             return PrintStatement();
 
+        if (AdvanceIfMatch(new LeftBrace()))
+            return new Block(Block());
+
         return ExpressionStatement();
+    }
+
+    private List<Stmt> Block()
+    {
+        var statements = new List<Stmt>();
+        while (Peek.Type is not (RightBrace or Eof))
+            statements.Add(Declaration());
+        Consume(new RightBrace(), "Expect '}' after block.");
+        return statements;
     }
 
     private Stmt PrintStatement()
