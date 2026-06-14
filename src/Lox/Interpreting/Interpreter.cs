@@ -27,7 +27,20 @@ public class Interpreter
         PrintStmt printStmt => ExecutePrintStmt(printStmt),
         VarStmt varStmt => ExecuteVarStmt(varStmt),
         Block block => ExecuteBlock(block.Statements),
+        IfStmt ifStmt => ExecuteIf(ifStmt),
     };
+
+    private Unit ExecuteIf(IfStmt stmt)
+    {
+        var conditionResult = Evaluate(stmt.Condition);
+        if (EvaluateAsBool(conditionResult))
+            return Execute(stmt.OnTrue);
+
+        if (stmt.OnFalse.HasValue)
+            return Execute(stmt.OnFalse.Value);
+
+        return new();
+    }
 
     private Unit ExecuteBlock(List<Stmt> statements)
     {
@@ -95,15 +108,13 @@ public class Interpreter
 
     private LoxValue EvaluateBinary(BinaryExpr binary)
     {
-        var leftValue = Evaluate(binary.Left);
-        var rightValue = Evaluate(binary.Right);
-
         return binary.Operator.Type switch
         {
-            Add => (leftValue, rightValue) switch
+            Add => (Evaluate(binary.Left), Evaluate(binary.Right)) switch
             {
                 (double leftNumber, double rightNumber) => leftNumber + rightNumber,
-                (string, _) or (_, string) => $"{leftValue}{rightValue}",
+                (string left, var right) => $"{left}{right}",
+                (var left, string right) => $"{left}{right}",
                 _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or at least on of them must be a string."),
             },
             Substract => ExecuteOnNumbers((l, r) => l - r),
@@ -116,13 +127,16 @@ public class Interpreter
             Less => ExecuteOnNumbers((l, r) => l < r),
             LessEqual => ExecuteOnNumbers((l, r) => l <= r),
 
-            Equal => leftValue.Value.Equals(rightValue.Value),
-            NotEqual => !leftValue.Value.Equals(rightValue.Value),
+            Equal => Evaluate(binary.Left) == Evaluate(binary.Right),
+            NotEqual => Evaluate(binary.Left) != Evaluate(binary.Right),
+
+            LogicalAnd => EvaluateAsBool(Evaluate(binary.Left)) && EvaluateAsBool(Evaluate(binary.Right)),
+            LogicalOr => EvaluateAsBool(Evaluate(binary.Left)) || EvaluateAsBool(Evaluate(binary.Right)),
         };
 
         LoxValue ExecuteOnNumbers(Func<double, double, LoxValue> operation)
         {
-            if (leftValue is double leftNum && rightValue is double rightNum)
+            if (Evaluate(binary.Left) is double leftNum && Evaluate(binary.Right) is double rightNum)
                 return operation(leftNum, rightNum);
 
             throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers.");

@@ -52,7 +52,24 @@ public class Parser(List<Token> tokens)
         if (AdvanceIfMatch(new LeftBrace()))
             return new Block(Block());
 
+        if (AdvanceIfMatch(new If()))
+            return IfStatement();
+
         return ExpressionStatement();
+    }
+
+    private Stmt IfStatement()
+    {
+        Consume(new LeftParen(), "Expect '(' after 'if'.");
+        var condition = Expression();
+        Consume(new RightParen(), "Expect ')' after if condition.");
+
+        var onTrue = Statement();
+        var onFalse = AdvanceIfMatch(new Else())
+            ? Statement()
+            : (Stmt?)null;
+
+        return new IfStmt(condition, onTrue, onFalse);
     }
 
     private List<Stmt> Block()
@@ -100,7 +117,7 @@ public class Parser(List<Token> tokens)
 
     private Expr Ternary()
     {
-        var expr = Equality();
+        var expr = OrExpr();
 
         if (AdvanceIfMatch(new Question()))
         {
@@ -112,6 +129,10 @@ public class Parser(List<Token> tokens)
 
         return expr;
     }
+
+    private Expr OrExpr() => ParseBinaryExpr(AndExpr, new Or());
+
+    private Expr AndExpr() => ParseBinaryExpr(Equality, new And());
 
     private Expr Equality() => ParseBinaryExpr(Comparison, new EqualEqual(), new BangEqual());
 
@@ -181,6 +202,8 @@ public class Parser(List<Token> tokens)
         Minus => new Substract(),
         Slash => new Divide(),
         Star => new Multiply(),
+        And => new LogicalAnd(),
+        Or => new LogicalOr(),
     };
 
     private static UnaryOperatorType ToUnaryOperator(TokenType type) => type switch
