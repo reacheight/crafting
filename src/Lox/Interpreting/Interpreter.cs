@@ -28,7 +28,15 @@ public class Interpreter
         VarStmt varStmt => ExecuteVarStmt(varStmt),
         Block block => ExecuteBlock(block.Statements),
         IfStmt ifStmt => ExecuteIf(ifStmt),
+        WhileStmt whileStmt => ExecuteWhile(whileStmt),
     };
+
+    private Unit ExecuteWhile(WhileStmt stmt)
+    {
+        while (EvaluateAsBool(Evaluate(stmt.Condition)))
+            Execute(stmt.Body);
+        return new();
+    }
 
     private Unit ExecuteIf(IfStmt stmt)
     {

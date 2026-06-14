@@ -55,7 +55,20 @@ public class Parser(List<Token> tokens)
         if (AdvanceIfMatch(new If()))
             return IfStatement();
 
+        if (AdvanceIfMatch(new While()))
+            return WhileStatement();
+
         return ExpressionStatement();
+    }
+
+    private Stmt WhileStatement()
+    {
+        Consume(new LeftParen(), "Expect '(' after 'while'.");
+        var condition = Expression();
+        Consume(new RightParen(), "Expect ')' after while condition.");
+        var body = Statement();
+
+        return new WhileStmt(condition, body);
     }
 
     private Stmt IfStatement()
