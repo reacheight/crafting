@@ -138,9 +138,21 @@ public class Interpreter
             Equal => Evaluate(binary.Left) == Evaluate(binary.Right),
             NotEqual => Evaluate(binary.Left) != Evaluate(binary.Right),
 
-            LogicalAnd => EvaluateAsBool(Evaluate(binary.Left)) && EvaluateAsBool(Evaluate(binary.Right)),
-            LogicalOr => EvaluateAsBool(Evaluate(binary.Left)) || EvaluateAsBool(Evaluate(binary.Right)),
+            LogicalAnd => ExecuteLogicalAnd(),
+            LogicalOr => ExecuteLogicalOr(),
         };
+
+        LoxValue ExecuteLogicalAnd()
+        {
+            var leftValue = Evaluate(binary.Left);
+            return EvaluateAsBool(leftValue) ? Evaluate(binary.Right) : leftValue;
+        }
+
+        LoxValue ExecuteLogicalOr()
+        {
+            var leftValue = Evaluate(binary.Left);
+            return EvaluateAsBool(leftValue) ? leftValue : Evaluate(binary.Right);
+        }
 
         LoxValue ExecuteOnNumbers(Func<double, double, LoxValue> operation)
         {
