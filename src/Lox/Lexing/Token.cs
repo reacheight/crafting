@@ -1,6 +1,8 @@
 ﻿namespace Lox.Lexing;
 
-public record Token(string Lexeme, int Line, TokenType Type);
+public record Token(SourceLocation Location, TokenType Type);
+
+public record struct SourceLocation(int Line);
 
 public readonly union TokenType(
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -41,7 +43,7 @@ public record struct GreaterEqual;
 public record struct Less;
 public record struct LessEqual;
 
-public record struct Identifier;
+public record Identifier(string Name);
 public record struct Var;
 
 public record struct And;

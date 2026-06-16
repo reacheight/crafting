@@ -1,4 +1,5 @@
 using Lox.Lexing;
+using Lox.Parsing.Syntax;
 
 namespace Lox.Parsing;
 

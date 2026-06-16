@@ -1,4 +1,5 @@
 ﻿using Lox.Lexing;
+using Lox.Parsing.Syntax;
 
 namespace Lox.Parsing;
 
@@ -19,7 +20,7 @@ public class Parser(List<Token> tokens)
         // TODO: get rid of throwing exception ?
         catch (ParseException parseException)
         {
-            Runner.ReportError(parseException.Token, parseException.Message);
+            Runner.ReportError(parseException.Token.Location, parseException.Message);
             return new ParseError(parseException.Token, parseException.Message);
         }
     }
@@ -34,14 +35,19 @@ public class Parser(List<Token> tokens)
 
     private Stmt VarDeclaration()
     {
-        var identifier = Consume(new Identifier(), "Expect variable name after 'var'.");
+        var identifierInfo = Peek.Type is Identifier ident
+            ? new IdentifierInfo(ident.Name, Peek.Location)
+            : throw new ParseException(Peek, "Expect variable name after 'var'.");
+
+        Advance();
+
         var initializer = AdvanceIfMatch(new Lexing.Equal())
             ? Expression()
             : (Expr?)null;
 
         Consume(new Semicolon(), "Expect ';' after variable declaration.");
 
-        return new VarStmt(identifier, initializer);
+        return new VarStmt(identifierInfo, initializer);
     }
 
     private Stmt Statement()
@@ -160,32 +166,32 @@ public class Parser(List<Token> tokens)
         var expr = parseOperand();
 
         while (AdvanceIfMatch(operatorTypes))
-            expr = new BinaryExpr(expr, new BinaryOperator(ToBinaryOperatorType(Previous.Type), Previous), parseOperand());
+            expr = new BinaryExpr(expr, new BinaryOperator(ToBinaryOperatorType(Previous.Type), Previous.Location), parseOperand());
 
         return expr;
     }
 
     private Expr Unary() => AdvanceIfMatch(new Bang(), new Minus())
-        ? new UnaryExpr(new(ToUnaryOperator(Previous.Type), Previous), Unary())
+        ? new UnaryExpr(new(ToUnaryOperator(Previous.Type), Previous.Location), Unary())
         : Primary();
 
     private Expr Primary()
     {
         if (AdvanceIfMatch(new True()))
-            return new Literal(true, Previous);
+            return new Literal(true);
 
         if (AdvanceIfMatch(new False()))
-            return new Literal(false, Previous);
+            return new Literal(false);
 
         if (AdvanceIfMatch(new Lexing.Nil()))
-            return new Literal(new Nil(), Previous);
+            return new Literal(new Nil());
 
         if (AdvanceIfLiteral() is var literal and not null)
         {
             return literal switch
             {
-                StringLiteralToken strLiteral => new Literal(strLiteral.Value, Previous),
-                NumberLiterlToken numLiteral => new Literal(numLiteral.Value, Previous),
+                StringLiteralToken strLiteral => new Literal(strLiteral.Value),
+                NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
             };
         }
 
@@ -196,8 +202,12 @@ public class Parser(List<Token> tokens)
             return new Grouping(expr);
         }
 
-        if (AdvanceIfMatch(new Identifier()))
-            return new Variable(Previous);
+        if (Peek.Type is Identifier ident)
+        {
+            var variable = new Variable(new(ident.Name, Peek.Location));
+            Advance();
+            return variable;
+        }
 
         throw new ParseException(Peek, "Expect expression.");
     }
@@ -205,12 +215,12 @@ public class Parser(List<Token> tokens)
 #pragma warning disable CS8509
     private static BinaryOperatorType ToBinaryOperatorType(TokenType type) => type switch
     {
-        EqualEqual => new Equal(),
+        EqualEqual => new Syntax.Equal(),
         BangEqual => new NotEqual(),
-        Lexing.Less => new Less(),
-        Lexing.LessEqual => new LessEqual(),
-        Lexing.Greater => new Greater(),
-        Lexing.GreaterEqual => new GreaterEqual(),
+        Lexing.Less => new Syntax.Less(),
+        Lexing.LessEqual => new Syntax.LessEqual(),
+        Lexing.Greater => new Syntax.Greater(),
+        Lexing.GreaterEqual => new Syntax.GreaterEqual(),
         Plus => new Add(),
         Minus => new Substract(),
         Slash => new Divide(),

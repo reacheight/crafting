@@ -38,7 +38,7 @@ public class Lexer(string source)
             if (lexingUnit is Token token)
                 yield return token;
             else if (lexingUnit is SyntaxError error)
-                Runner.ReportError(line, error.Message);
+                Runner.ReportError(new(line), error.Message);
         }
 
         yield return CreateToken(new(new Eof()));
@@ -95,7 +95,7 @@ public class Lexer(string source)
         var text = GetCurrentTokenText();
         return CreateToken(keywordMap.TryGetValue(text, out var keywordType)
             ? keywordType
-            : new Identifier());
+            : new Identifier(text));
     }
 
     private Token ScanNumber()
@@ -138,7 +138,7 @@ public class Lexer(string source)
     }
 
     private Token CreateToken(TokenType type)
-        => new(GetCurrentTokenText(), line, type);
+        => new(new(line), type);
 
     private Comment ScanComment()
     {

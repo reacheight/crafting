@@ -1,8 +1,8 @@
 ﻿using Lox.Lexing;
 
-namespace Lox.Parsing;
+namespace Lox.Parsing.Syntax;
 
-public record BinaryOperator(BinaryOperatorType Type, Token Token);
+public record BinaryOperator(BinaryOperatorType Type, SourceLocation Location);
 
 public readonly union BinaryOperatorType(
     Add, Substract, Multiply, Divide,

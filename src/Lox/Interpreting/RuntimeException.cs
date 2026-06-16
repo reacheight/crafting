@@ -4,7 +4,7 @@ using Lox.Lexing;
 
 namespace Lox.Interpreting;
 
-public class RuntimeException(Token token, string message) : Exception(message)
+public class RuntimeException(SourceLocation location, string message) : Exception(message)
 {
-    public Token Token { get; init; } = token;
+    public SourceLocation Location { get; init; } = location;
 }

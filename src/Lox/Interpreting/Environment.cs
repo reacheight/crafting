@@ -1,5 +1,5 @@
-using Lox.Lexing;
 using Lox.Parsing;
+using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
@@ -9,22 +9,22 @@ public class Environment
 
     public void DefineVariable(string name, LoxValue value) => CurrentScope.Values[name] = value;
 
-    public void AssignVariable(Token identifier, LoxValue value)
+    public void AssignVariable(IdentifierInfo identifier, LoxValue value)
     {
         var containingScope =
-            FindContainingScope(identifier.Lexeme)
-            ?? throw new RuntimeException(identifier, $"Can't assign undefined variable '{identifier.Lexeme}'.");
+            FindContainingScope(identifier.Name)
+            ?? throw new RuntimeException(identifier.Location, $"Can't assign undefined variable '{identifier.Name}'.");
 
-        containingScope.Values[identifier.Lexeme] = value;
+        containingScope.Values[identifier.Name] = value;
     }
 
-    public LoxValue GetVariableValue(Token identifier)
+    public LoxValue GetVariableValue(IdentifierInfo identifier)
     {
         var containingScope =
-            FindContainingScope(identifier.Lexeme)
-            ?? throw new RuntimeException(identifier, $"Undefined variable '{identifier.Lexeme}'.");
+            FindContainingScope(identifier.Name)
+            ?? throw new RuntimeException(identifier.Location, $"Undefined variable '{identifier.Name}'.");
 
-        return containingScope.Values[identifier.Lexeme];
+        return containingScope.Values[identifier.Name];
     }
 
     public void EnterScope() => scopes.Push(new());

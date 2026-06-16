@@ -52,26 +52,15 @@ public static class Runner
         interpreter.Interpret(program);
     }
 
-    public static void ReportError(int line, string message)
-        => ReportError(line, "", message);
-
-    public static void ReportError(Token token, string message)
-    {
-        if (token.Type is Eof)
-            ReportError(token.Line, " at end", message);
-        else
-            ReportError(token.Line, $" at '{token.Lexeme}'", message);
-    }
-
     public static void ReportRuntimeError(RuntimeException error)
     {
-        Console.Error.WriteLine($"[line {error.Token.Line}] RuntimeError: {error.Message}");
+        Console.Error.WriteLine($"[line {error.Location.Line}] RuntimeError: {error.Message}");
         HadRuntimeError = true;
     }
 
-    private static void ReportError(int line, string where, string message)
+    public static void ReportError(SourceLocation location, string message)
     {
-        Console.Error.WriteLine($"[line {line}] SyntaxError{where}: {message}");
+        Console.Error.WriteLine($"[line {location.Line}] SyntaxError: {message}");
         HadSyntaxError = true;
     }
 }

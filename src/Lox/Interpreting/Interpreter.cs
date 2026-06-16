@@ -1,4 +1,5 @@
 ﻿using Lox.Parsing;
+using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
@@ -80,7 +81,7 @@ public class Interpreter
             ? Evaluate(stmt.Initializer.Value)
             : new Nil();
 
-        environment.DefineVariable(stmt.Identifier.Lexeme, val);
+        environment.DefineVariable(stmt.Identifier.Name, val);
         return new();
     }
 
@@ -110,7 +111,7 @@ public class Interpreter
             Not => !EvaluateAsBool(operandValue),
             Negate => operandValue is double num
                 ? -num
-                : throw new RuntimeException(unary.Operator.Token, "Operand must be a number."),
+                : throw new RuntimeException(unary.Operator.Location, "Operand must be a number."),
         };
     }
 
@@ -123,11 +124,11 @@ public class Interpreter
                 (double leftNumber, double rightNumber) => leftNumber + rightNumber,
                 (string left, var right) => $"{left}{right}",
                 (var left, string right) => $"{left}{right}",
-                _ => throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers or at least on of them must be a string."),
+                _ => throw new RuntimeException(binary.Operator.Location, "Operands must be two numbers or at least on of them must be a string."),
             },
             Substract => ExecuteOnNumbers((l, r) => l - r),
             Divide => ExecuteOnNumbers((l, r) => r == 0
-                ? throw new RuntimeException(binary.Operator.Token, "Division by zero.")
+                ? throw new RuntimeException(binary.Operator.Location, "Division by zero.")
                 : l / r),
             Multiply => ExecuteOnNumbers((l, r) => l * r),
             Greater => ExecuteOnNumbers((l, r) => l > r),
@@ -159,7 +160,7 @@ public class Interpreter
             if (Evaluate(binary.Left) is double leftNum && Evaluate(binary.Right) is double rightNum)
                 return operation(leftNum, rightNum);
 
-            throw new RuntimeException(binary.Operator.Token, "Operands must be two numbers.");
+            throw new RuntimeException(binary.Operator.Location, "Operands must be two numbers.");
         }
     }
 
