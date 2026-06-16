@@ -25,13 +25,11 @@ public class Parser(List<Token> tokens)
         }
     }
 
-    private Stmt Declaration()
+    private Stmt Declaration() => Peek.Type switch
     {
-        if (AdvanceIfMatch(new Var()))
-            return VarDeclaration();
-
-        return Statement();
-    }
+        Var => AdvanceAnd(VarDeclaration),
+        _ => Statement(),
+    };
 
     private Stmt VarDeclaration()
     {
@@ -41,37 +39,29 @@ public class Parser(List<Token> tokens)
 
         Advance();
 
-        var initializer = AdvanceIfMatch(new Lexing.Equal())
-            ? Expression()
+        var initializer = Peek.Type is Lexing.Equal
+            ? AdvanceAnd(Expression)
             : (Expr?)null;
 
-        Consume(new Semicolon(), "Expect ';' after variable declaration.");
+        Consume<Semicolon>("Expect ';' after variable declaration.");
 
         return new VarStmt(identifierInfo, initializer);
     }
 
-    private Stmt Statement()
+    private Stmt Statement() => Peek.Type switch
     {
-        if (AdvanceIfMatch(new Print()))
-            return PrintStatement();
-
-        if (AdvanceIfMatch(new LeftBrace()))
-            return new Block(Block());
-
-        if (AdvanceIfMatch(new If()))
-            return IfStatement();
-
-        if (AdvanceIfMatch(new While()))
-            return WhileStatement();
-
-        return ExpressionStatement();
-    }
+        Print => AdvanceAnd(PrintStatement),
+        LeftBrace => AdvanceAnd(() => new Block(Block())),
+        If => AdvanceAnd(IfStatement),
+        While => AdvanceAnd(WhileStatement),
+        _ => ExpressionStatement(),
+    };
 
     private Stmt WhileStatement()
     {
-        Consume(new LeftParen(), "Expect '(' after 'while'.");
+        Consume<LeftParen>("Expect '(' after 'while'.");
         var condition = Expression();
-        Consume(new RightParen(), "Expect ')' after while condition.");
+        Consume<RightParen>("Expect ')' after while condition.");
         var body = Statement();
 
         return new WhileStmt(condition, body);
@@ -79,13 +69,13 @@ public class Parser(List<Token> tokens)
 
     private Stmt IfStatement()
     {
-        Consume(new LeftParen(), "Expect '(' after 'if'.");
+        Consume<LeftParen>("Expect '(' after 'if'.");
         var condition = Expression();
-        Consume(new RightParen(), "Expect ')' after if condition.");
+        Consume<RightParen>("Expect ')' after if condition.");
 
         var onTrue = Statement();
-        var onFalse = AdvanceIfMatch(new Else())
-            ? Statement()
+        var onFalse = Peek.Type is Else
+            ? AdvanceAnd(Statement)
             : (Stmt?)null;
 
         return new IfStmt(condition, onTrue, onFalse);
@@ -96,21 +86,21 @@ public class Parser(List<Token> tokens)
         var statements = new List<Stmt>();
         while (Peek.Type is not (RightBrace or Eof))
             statements.Add(Declaration());
-        Consume(new RightBrace(), "Expect '}' after block.");
+        Consume<RightBrace>("Expect '}' after block.");
         return statements;
     }
 
     private Stmt PrintStatement()
     {
         var expr = Expression();
-        Consume(new Semicolon(), "Expect ';' after value.");
+        Consume<Semicolon>("Expect ';' after value.");
         return new PrintStmt(expr);
     }
 
     private Stmt ExpressionStatement()
     {
         var expr = Expression();
-        Consume(new Semicolon(), "Expect ';' after expression.");
+        Consume<Semicolon>("Expect ';' after expression.");
         return new ExprStmt(expr);
     }
 
@@ -120,8 +110,10 @@ public class Parser(List<Token> tokens)
     {
         var expr = Ternary();
 
-        if (AdvanceIfMatch(new Lexing.Equal()))
+        if (Peek.Type is Lexing.Equal)
         {
+            Advance();
+
             var equal = Previous;
             var val = Assignment();
 
@@ -138,10 +130,12 @@ public class Parser(List<Token> tokens)
     {
         var expr = OrExpr();
 
-        if (AdvanceIfMatch(new Question()))
+        if (Peek.Type is Question)
         {
+            Advance();
+
             var onTrue = Ternary();
-            Consume(new Colon(), "Expect ':' in a ternary expression.");
+            Consume<Colon>("Expect ':' in a ternary expression.");
             var onFalse = Ternary();
             expr = new Ternary(expr, onTrue, onFalse);
         }
@@ -149,68 +143,51 @@ public class Parser(List<Token> tokens)
         return expr;
     }
 
-    private Expr OrExpr() => ParseBinaryExpr(AndExpr, new Or());
+    private Expr OrExpr() => ParseBinaryExpr(AndExpr, _ => _ is Or);
 
-    private Expr AndExpr() => ParseBinaryExpr(Equality, new And());
+    private Expr AndExpr() => ParseBinaryExpr(Equality, _ => _ is And);
 
-    private Expr Equality() => ParseBinaryExpr(Comparison, new EqualEqual(), new BangEqual());
+    private Expr Equality() => ParseBinaryExpr(Comparison, _ => _ is EqualEqual or BangEqual);
 
-    private Expr Comparison() => ParseBinaryExpr(Term, new Lexing.Less(), new Lexing.LessEqual(), new Lexing.Greater(), new Lexing.GreaterEqual());
+    private Expr Comparison() => ParseBinaryExpr(Term, _ => _ is Lexing.Less or Lexing.LessEqual or Lexing.Greater or Lexing.GreaterEqual);
 
-    private Expr Term() => ParseBinaryExpr(Factor, new Plus(), new Minus());
+    private Expr Term() => ParseBinaryExpr(Factor, _ => _ is Plus or Minus);
 
-    private Expr Factor() => ParseBinaryExpr(Unary, new Star(), new Slash());
+    private Expr Factor() => ParseBinaryExpr(Unary, _ => _ is Star or Slash);
 
-    private Expr ParseBinaryExpr(Func<Expr> parseOperand, params TokenType[] operatorTypes)
+    private Expr ParseBinaryExpr(Func<Expr> parseOperand, Predicate<TokenType> predicate)
     {
         var expr = parseOperand();
 
-        while (AdvanceIfMatch(operatorTypes))
+        while (AdvanceIfMatch(predicate))
             expr = new BinaryExpr(expr, new BinaryOperator(ToBinaryOperatorType(Previous.Type), Previous.Location), parseOperand());
 
         return expr;
     }
 
-    private Expr Unary() => AdvanceIfMatch(new Bang(), new Minus())
+    private Expr Unary() => AdvanceIfMatch(_ => _ is Bang or Minus)
         ? new UnaryExpr(new(ToUnaryOperator(Previous.Type), Previous.Location), Unary())
         : Primary();
 
-    private Expr Primary()
+    private Expr Primary() => Peek.Type switch
     {
-        if (AdvanceIfMatch(new True()))
-            return new Literal(true);
-
-        if (AdvanceIfMatch(new False()))
-            return new Literal(false);
-
-        if (AdvanceIfMatch(new Lexing.Nil()))
-            return new Literal(new Nil());
-
-        if (AdvanceIfLiteral() is var literal and not null)
+        True => AdvanceAnd(() => new Literal(true)),
+        False => AdvanceAnd(() => new Literal(false)),
+        Lexing.Nil => AdvanceAnd(() => new Literal(new Nil())),
+        Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Peek.Location))),
+        LiteralToken literal => AdvanceAnd(() => literal switch
         {
-            return literal switch
-            {
-                StringLiteralToken strLiteral => new Literal(strLiteral.Value),
-                NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
-            };
-        }
-
-        if (AdvanceIfMatch(new LeftParen()))
+            StringLiteralToken strLiteral => new Literal(strLiteral.Value),
+            NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
+        }),
+        LeftParen => AdvanceAnd(() =>
         {
             var expr = Expression();
-            Consume(new RightParen(), "Expect ')' after expression.");
+            Consume<RightParen>("Expect ')' after expression.");
             return new Grouping(expr);
-        }
-
-        if (Peek.Type is Identifier ident)
-        {
-            var variable = new Variable(new(ident.Name, Peek.Location));
-            Advance();
-            return variable;
-        }
-
-        throw new ParseException(Peek, "Expect expression.");
-    }
+        }),
+        _ => throw new ParseException(Peek, "Expect expression."),
+    };
 
 #pragma warning disable CS8509
     private static BinaryOperatorType ToBinaryOperatorType(TokenType type) => type switch
@@ -236,30 +213,27 @@ public class Parser(List<Token> tokens)
     };
 #pragma warning restore CS8509
 
-    private Token Consume(TokenType type, string errorMessage)
+    private void Consume<T>(string errorMessage)
     {
-        if (IsAt(type))
-            return Advance();
+        if (Peek.Type is not T)
+            throw new ParseException(Peek, errorMessage);
 
-        throw new ParseException(Peek, errorMessage);
+        Advance();
     }
 
-    private bool AdvanceIfMatch(params IEnumerable<TokenType> types)
+    private bool AdvanceIfMatch(Predicate<TokenType> predicate)
     {
-        if (!types.Any(IsAt))
+        if (!predicate(Peek.Type))
             return false;
 
         Advance();
         return true;
     }
 
-    private LiteralToken? AdvanceIfLiteral()
+    private T AdvanceAnd<T>(Func<T> parse)
     {
-        if (Peek.Type is not LiteralToken peekLiteral)
-            return null;
-
         Advance();
-        return peekLiteral;
+        return parse();
     }
 
     private Token Advance()
@@ -269,10 +243,7 @@ public class Parser(List<Token> tokens)
         return Previous;
     }
 
-    private bool IsAtEnd => IsAt(new Eof());
-
-    private bool IsAt(TokenType type)
-        => Peek.Type.Value.Equals(type.Value);
+    private bool IsAtEnd => Peek.Type is Eof;
 
     private Token Peek => tokens[current];
     private Token Previous => tokens[current - 1];
