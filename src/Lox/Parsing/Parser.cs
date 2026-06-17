@@ -54,8 +54,42 @@ public class Parser(List<Token> tokens)
         LeftBrace => AdvanceAnd(() => new Block(Block())),
         If => AdvanceAnd(IfStatement),
         While => AdvanceAnd(WhileStatement),
+        For => AdvanceAnd(ForLoop),
         _ => ExpressionStatement(),
     };
+
+    private Stmt ForLoop()
+    {
+        Consume<LeftParen>("Expect '(' after 'for'.");
+
+        var initializer = Peek.Type is Semicolon
+            ? AdvanceAnd(() => (Stmt?)null)
+            : Peek.Type is Var
+                ? AdvanceAnd(VarDeclaration)
+                : ExpressionStatement();
+
+        var condition = Peek.Type is Semicolon
+            ? (Expr?)null
+            : Expression();
+        Consume<Semicolon>("Expect ';' after loop condition.");
+
+        var increment = Peek.Type is RightParen
+            ? (Expr?)null
+            : Expression();
+        Consume<RightParen>("Expect ')' after for clauses.");
+
+        var body = Statement();
+        if (increment.HasValue)
+            body = new Block([body, new ExprStmt(increment.Value)]);
+
+        var whileCondition = condition ?? new Literal(true);
+        body = new WhileStmt(whileCondition, body);
+
+        if (initializer.HasValue)
+            body = new Block([initializer.Value, body]);
+
+        return body;
+    }
 
     private Stmt WhileStatement()
     {
