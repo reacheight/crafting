@@ -34,10 +34,8 @@ public class Parser(List<Token> tokens)
     private Stmt VarDeclaration()
     {
         var identifierInfo = Peek.Type is Identifier ident
-            ? new IdentifierInfo(ident.Name, Peek.Location)
+            ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
             : throw new ParseException(Peek, "Expect variable name after 'var'.");
-
-        Advance();
 
         var initializer = Peek.Type is Lexing.Equal
             ? AdvanceAnd(Expression)
