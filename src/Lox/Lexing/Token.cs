@@ -12,7 +12,7 @@ public readonly union TokenType(
     Greater, GreaterEqual, Less, LessEqual,
     Identifier, Var, And, Or, Class, Fun,
     This, Super, If, Else, True, False, Nil,
-    Print, Return, For, While,
+    Print, Return, For, While, Break,
     LiteralToken,
     Eof
 );
@@ -66,6 +66,7 @@ public record struct Return;
 
 public record struct For;
 public record struct While;
+public record struct Break;
 
 public record struct Eof;
 

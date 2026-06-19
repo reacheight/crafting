@@ -26,6 +26,7 @@ public class Lexer(string source)
         ["true"] = new True(),
         ["var"] = new Var(),
         ["while"] = new While(),
+        ["break"] = new Break(),
     };
 
     public IEnumerable<Token> Tokenize()

@@ -30,12 +30,19 @@ public class Interpreter
         Block block => ExecuteBlock(block.Statements),
         IfStmt ifStmt => ExecuteIf(ifStmt),
         WhileStmt whileStmt => ExecuteWhile(whileStmt),
+        BreakStmt => throw new BreakException(),
     };
 
     private Unit ExecuteWhile(WhileStmt stmt)
     {
-        while (EvaluateAsBool(Evaluate(stmt.Condition)))
-            Execute(stmt.Body);
+        try
+        {
+            while (EvaluateAsBool(Evaluate(stmt.Condition)))
+                Execute(stmt.Body);
+        }
+        catch (BreakException)
+        { }
+
         return new();
     }
 

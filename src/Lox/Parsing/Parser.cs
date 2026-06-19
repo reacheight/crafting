@@ -6,6 +6,7 @@ namespace Lox.Parsing;
 public class Parser(List<Token> tokens)
 {
     private int current = 0;
+    private int loopsCount = 0;
 
     public ParseResult Parse()
     {
@@ -53,11 +54,24 @@ public class Parser(List<Token> tokens)
         If => AdvanceAnd(IfStatement),
         While => AdvanceAnd(WhileStatement),
         For => AdvanceAnd(ForLoop),
+        Break => AdvanceAnd(BreakStatement),
         _ => ExpressionStatement(),
     };
 
+    private Stmt BreakStatement()
+    {
+        if (loopsCount is 0)
+            throw new ParseException(Previous, "'break' can't be used outside while and for loops.");
+
+        Consume<Semicolon>("Expect ';' after 'break'.");
+
+        return new BreakStmt();
+    }
+
     private Stmt ForLoop()
     {
+        loopsCount++;
+
         Consume<LeftParen>("Expect '(' after 'for'.");
 
         var initializer = Peek.Type is Semicolon
@@ -86,15 +100,21 @@ public class Parser(List<Token> tokens)
         if (initializer.HasValue)
             body = new Block([initializer.Value, body]);
 
+        loopsCount--;
+
         return body;
     }
 
     private Stmt WhileStatement()
     {
+        loopsCount++;
+
         Consume<LeftParen>("Expect '(' after 'while'.");
         var condition = Expression();
         Consume<RightParen>("Expect ')' after while condition.");
         var body = Statement();
+
+        loopsCount--;
 
         return new WhileStmt(condition, body);
     }
