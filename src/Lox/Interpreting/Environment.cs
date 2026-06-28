@@ -2,9 +2,9 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class Environment
+public class Environment(Dictionary<string, LoxValue> globals)
 {
-    private readonly Stack<Scope> scopes = new([new()]);
+    private readonly Stack<Scope> scopes = new([new(globals)]);
 
     public void DefineVariable(string name, LoxValue value) => CurrentScope.Values[name] = value;
 

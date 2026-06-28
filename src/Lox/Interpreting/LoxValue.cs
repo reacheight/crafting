@@ -10,7 +10,7 @@ public readonly union LoxValue(string, double, bool, ILoxCallable, Nil)
         string s => s,
         double n => n.ToString(CultureInfo.InvariantCulture),
         bool b => b ? "true" : "false",
-        ILoxCallable => "some callable",
+        ILoxCallable c => c.ToString() ?? "some callable",
     };
 
     public override bool Equals(object? obj)

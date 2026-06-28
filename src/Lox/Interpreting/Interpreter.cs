@@ -1,4 +1,5 @@
-﻿using Lox.Parsing;
+﻿using Lox.Interpreting.Globals;
+using Lox.Parsing;
 using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
@@ -7,7 +8,10 @@ public class Interpreter
 {
     private record struct Unit;
 
-    private readonly Environment environment = new();
+    private readonly Environment environment = new(new()
+    {
+        ["clock"] = new Clock(),
+    });
 
     public void Interpret(LoxProgram program)
     {
