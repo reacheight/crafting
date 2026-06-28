@@ -86,7 +86,7 @@ public class Interpreter
     {
         var val = stmt.Initializer.HasValue
             ? Evaluate(stmt.Initializer.Value)
-            : new Nil();
+            : new LoxValue(new Nil());
 
         environment.DefineVariable(stmt.Identifier.Name, val);
         return new();
@@ -101,7 +101,25 @@ public class Interpreter
         BinaryExpr binary => EvaluateBinary(binary),
         Ternary ternary => EvaluateTernary(ternary),
         AssignmentExpr assignment => EvaluateAssignment(assignment),
+        CallExpr call => EvaluateCall(call),
     };
+
+    private LoxValue EvaluateCall(CallExpr call)
+    {
+        var callee = Evaluate(call.Callee);
+
+        var arguments = new List<LoxValue>(call.Arguments.Count);
+        foreach (var arg in call.Arguments)
+            arguments.Add(Evaluate(arg));
+
+        if (callee is not ILoxCallable function)
+            throw new RuntimeException(call.RightParenLocation, "Can only call function and classes.");
+
+        if (arguments.Count != function.Arity)
+            throw new RuntimeException(call.RightParenLocation, $"Expected {function.Arity} arguments but got {arguments.Count}.");
+
+        return function.Call(this, arguments);
+    }
 
     private LoxValue EvaluateAssignment(AssignmentExpr assignment)
     {

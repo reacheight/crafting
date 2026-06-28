@@ -1,4 +1,3 @@
-using Lox.Parsing;
 using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;

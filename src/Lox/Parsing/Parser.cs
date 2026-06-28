@@ -219,13 +219,51 @@ public class Parser(List<Token> tokens)
 
     private Expr Unary() => AdvanceIfMatch(_ => _ is Bang or Minus)
         ? new UnaryExpr(new(ToUnaryOperator(Previous.Type), Previous.Location), Unary())
-        : Primary();
+        : Call();
+
+    private Expr Call()
+    {
+        var expr = Primary();
+
+        while (true)
+        {
+            // TODO: add compile time check for 100% noncallable things like literals and keywords?
+
+            if (Peek.Type is LeftParen)
+                expr = AdvanceAnd(() => FinishCall(expr));
+            else
+                break;
+        }
+
+        return expr;
+    }
+
+    private Expr FinishCall(Expr callee)
+    {
+        var arguments = new List<Expr>();
+
+        if (Peek.Type is not RightParen)
+        {
+            arguments.Add(Expression());
+
+            while (Peek.Type is Comma)
+            {
+                if (arguments.Count >= 255)
+                    Runner.ReportError(Peek.Location, "Can't have more than 255 arguments.");
+
+                arguments.Add(AdvanceAnd(Expression));
+            }
+        }
+
+        Consume<RightParen>("Expect ')' after arguments.");
+        return new CallExpr(callee, arguments, Previous.Location);
+    }
 
     private Expr Primary() => Peek.Type switch
     {
         True => AdvanceAnd(() => new Literal(true)),
         False => AdvanceAnd(() => new Literal(false)),
-        Lexing.Nil => AdvanceAnd(() => new Literal(new Nil())),
+        Nil => AdvanceAnd(() => new Literal(new Interpreting.Nil())),
         Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Peek.Location))),
         LiteralToken literal => AdvanceAnd(() => literal switch
         {
