@@ -29,8 +29,41 @@ public class Parser(List<Token> tokens)
     private Stmt Declaration() => Peek.Type switch
     {
         Var => AdvanceAnd(VarDeclaration),
+        Fun => AdvanceAnd(() => Function("function")),
         _ => Statement(),
     };
+
+    private Stmt Function(string kind)
+    {
+        var name = ConsumeIdentifier($"Expect {kind} name.");
+        Consume<LeftParen>($"Expect '(' after {kind} name.");
+
+        var parameters = new List<IdentifierInfo>();
+
+        if (Peek.Type is not RightParen)
+        {
+            parameters.Add(ConsumeIdentifier("Expect parameter name."));
+
+            while (Peek.Type is Comma)
+            {
+                if (parameters.Count >= 255)
+                    Runner.ReportError(Peek.Location, "Can't have more than 255 parameters.");
+
+                parameters.Add(ConsumeIdentifier("Expect parameter name."));
+            }
+        }
+
+        Consume<RightParen>("Expect ')' after parameters.");
+
+        Consume<LeftBrace>($"Expect '{{' before {kind} body.");
+        var body = Block();
+
+        return new FunStmt(name, parameters, body);
+
+        IdentifierInfo ConsumeIdentifier(string errorMessage) => Peek.Type is Identifier ident
+            ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
+            : throw new ParseException(Peek, errorMessage);
+    }
 
     private Stmt VarDeclaration()
     {
