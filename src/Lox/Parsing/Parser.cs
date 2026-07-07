@@ -49,7 +49,7 @@ public class Parser(List<Token> tokens)
                 if (parameters.Count >= 255)
                     Runner.ReportError(Peek.Location, "Can't have more than 255 parameters.");
 
-                parameters.Add(ConsumeIdentifier("Expect parameter name."));
+                parameters.Add(AdvanceAnd(() => ConsumeIdentifier("Expect parameter name.")));
             }
         }
 
