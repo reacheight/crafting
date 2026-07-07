@@ -2,9 +2,9 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class LoxFunction(FunStmt declaration) : ILoxCallable
+public class LoxFunction(FunDecl declaration) : ILoxCallable
 {
-    private readonly FunStmt declaration = declaration;
+    private readonly FunDecl declaration = declaration;
 
     public int Arity => declaration.Parameters.Count;
 

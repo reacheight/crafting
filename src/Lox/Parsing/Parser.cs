@@ -58,7 +58,7 @@ public class Parser(List<Token> tokens)
         Consume<LeftBrace>($"Expect '{{' before {kind} body.");
         var body = Block();
 
-        return new FunStmt(name, parameters, body);
+        return new FunDecl(name, parameters, body);
 
         IdentifierInfo ConsumeIdentifier(string errorMessage) => Peek.Type is Identifier ident
             ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
@@ -77,7 +77,7 @@ public class Parser(List<Token> tokens)
 
         Consume<Semicolon>("Expect ';' after variable declaration.");
 
-        return new VarStmt(identifierInfo, initializer);
+        return new VarDecl(identifierInfo, initializer);
     }
 
     private Stmt Statement() => Peek.Type switch

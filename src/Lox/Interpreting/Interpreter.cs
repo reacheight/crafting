@@ -34,18 +34,18 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
     {
         ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
         PrintStmt printStmt => ExecutePrintStmt(printStmt),
-        VarStmt varStmt => ExecuteVarStmt(varStmt),
+        VarDecl varDecl => ExecuteVarDecl(varDecl),
         Block block => ExecuteBlock(block.Statements),
         IfStmt ifStmt => ExecuteIf(ifStmt),
         WhileStmt whileStmt => ExecuteWhile(whileStmt),
         BreakStmt => throw new BreakException(),
-        FunStmt funStmt => ExecuteFunDecl(funStmt),
+        FunDecl funDecl => ExecuteFunDecl(funDecl),
     };
 
-    private Unit ExecuteFunDecl(FunStmt stmt)
+    private Unit ExecuteFunDecl(FunDecl decl)
     {
-        var func = new LoxFunction(stmt);
-        environment.DefineVariable(stmt.Identifier.Name, func);
+        var func = new LoxFunction(decl);
+        environment.DefineVariable(decl.Identifier.Name, func);
         return new();
     }
 
@@ -98,13 +98,13 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
         return new();
     }
 
-    private Unit ExecuteVarStmt(VarStmt stmt)
+    private Unit ExecuteVarDecl(VarDecl decl)
     {
-        var val = stmt.Initializer.HasValue
-            ? Evaluate(stmt.Initializer.Value)
+        var val = decl.Initializer.HasValue
+            ? Evaluate(decl.Initializer.Value)
             : new LoxValue(new Nil());
 
-        environment.DefineVariable(stmt.Identifier.Name, val);
+        environment.DefineVariable(decl.Identifier.Name, val);
         return new();
     }
 
