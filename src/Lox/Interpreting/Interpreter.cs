@@ -4,14 +4,11 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class Interpreter
+public class Interpreter(Dictionary<string, LoxValue> globals)
 {
     private record struct Unit;
 
-    private readonly Environment environment = new(new()
-    {
-        ["clock"] = new Clock(),
-    });
+    private readonly Environment environment = new(globals);
 
     public void Interpret(LoxProgram program)
     {
@@ -26,6 +23,13 @@ public class Interpreter
         }
     }
 
+    public void ExecuteBlock(LoxProgram program, Dictionary<string, LoxValue> localValues)
+    {
+        var blockGlobals = environment.GetGlobals().Concat(localValues).ToDictionary();
+        var innerInterpreor = new Interpreter(blockGlobals);
+        innerInterpreor.Interpret(program);
+    }
+
     private Unit Execute(Stmt stmt) => stmt switch
     {
         ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
@@ -35,7 +39,15 @@ public class Interpreter
         IfStmt ifStmt => ExecuteIf(ifStmt),
         WhileStmt whileStmt => ExecuteWhile(whileStmt),
         BreakStmt => throw new BreakException(),
+        FunStmt funStmt => ExecuteFunDecl(funStmt),
     };
+
+    private Unit ExecuteFunDecl(FunStmt stmt)
+    {
+        var func = new LoxFunction(stmt);
+        environment.DefineVariable(stmt.Identifier.Name, func);
+        return new();
+    }
 
     private Unit ExecuteWhile(WhileStmt stmt)
     {
