@@ -4,7 +4,8 @@ namespace Lox.Interpreting;
 
 public class Environment(Dictionary<string, LoxValue> globals)
 {
-    private readonly Stack<Scope> scopes = new([new(globals)]);
+    private readonly Scope globalScope = new(globals);
+    private readonly Stack<Scope> innerScopes = new();
 
     public void DefineVariable(string name, LoxValue value) => CurrentScope.Values[name] = value;
 
@@ -26,11 +27,16 @@ public class Environment(Dictionary<string, LoxValue> globals)
         return containingScope.Values[identifier.Name];
     }
 
-    public void EnterScope() => scopes.Push(new());
-    public void ExitScope() => scopes.Pop();
+    public void EnterScope() => innerScopes.Push(new());
+    public void ExitScope() => innerScopes.Pop();
 
-    private Scope CurrentScope => scopes.Peek();
-    private Scope? FindContainingScope(string name) => scopes.FirstOrDefault(scope => scope.Values.ContainsKey(name));
+    public Dictionary<string, LoxValue> GetGlobals() => globalScope.Values;
+
+    private Scope CurrentScope => innerScopes.Count > 0 ? innerScopes.Peek() : globalScope;
+
+    private Scope? FindContainingScope(string name)
+        => innerScopes.FirstOrDefault(scope => scope.Values.ContainsKey(name))
+            ?? (globalScope.Values.ContainsKey(name) ? globalScope : null);
 
     private record Scope(Dictionary<string, LoxValue> Values)
     {
