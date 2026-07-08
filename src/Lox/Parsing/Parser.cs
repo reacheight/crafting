@@ -7,6 +7,7 @@ public class Parser(List<Token> tokens)
 {
     private int current = 0;
     private int loopsCount = 0;
+    private int funCount = 0;
 
     public ParseResult Parse()
     {
@@ -54,9 +55,13 @@ public class Parser(List<Token> tokens)
         }
 
         Consume<RightParen>("Expect ')' after parameters.");
-
         Consume<LeftBrace>($"Expect '{{' before {kind} body.");
+
+        funCount++;
+
         var body = Block();
+
+        funCount--;
 
         return new FunDecl(name, parameters, body);
 
@@ -88,8 +93,24 @@ public class Parser(List<Token> tokens)
         While => AdvanceAnd(WhileStatement),
         For => AdvanceAnd(ForLoop),
         Break => AdvanceAnd(BreakStatement),
+        Return => AdvanceAnd(ReturnStatement),
         _ => ExpressionStatement(),
     };
+
+    private Stmt ReturnStatement()
+    {
+        var keywrod = Previous;
+
+        if (funCount is 0)
+            throw new ParseException(Previous, "'return' can't be used outside function body.");
+
+        var expr = Peek.Type is Semicolon
+            ? (Expr?)null
+            : Expression();
+
+        Consume<Semicolon>($"Expect ';' after return{(expr is null ? string.Empty : " value")}.");
+        return new ReturnStmt(expr, keywrod.Location);
+    }
 
     private Stmt BreakStatement()
     {

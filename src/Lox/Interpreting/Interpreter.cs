@@ -43,7 +43,14 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
         WhileStmt whileStmt => ExecuteWhile(whileStmt),
         BreakStmt => throw new BreakException(),
         FunDecl funDecl => ExecuteFunDecl(funDecl),
+        ReturnStmt returnStmt => ExecuteReturnStmt(returnStmt),
     };
+
+    private Unit ExecuteReturnStmt(ReturnStmt stmt)
+    {
+        var val = stmt.Expr.HasValue ? Evaluate(stmt.Expr.Value) : new Nil();
+        throw new ReturnException(val);
+    }
 
     private Unit ExecuteFunDecl(FunDecl decl)
     {

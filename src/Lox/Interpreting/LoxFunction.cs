@@ -11,7 +11,16 @@ public class LoxFunction(FunDecl declaration) : ILoxCallable
     public LoxValue Call(Interpreter interpreter, List<LoxValue> arguments)
     {
         var boundParameters = declaration.Parameters.Select(p => p.Name).Zip(arguments).ToDictionary();
-        interpreter.ExecuteBlock(new(declaration.Body), boundParameters);
+
+        try
+        {
+            interpreter.ExecuteBlock(new(declaration.Body), boundParameters);
+        }
+        catch (ReturnException ret)
+        {
+            return ret.Value;
+        }
+
         return new Nil();
     }
 
