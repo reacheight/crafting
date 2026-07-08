@@ -30,7 +30,7 @@ public class Environment(Dictionary<string, LoxValue> globals)
     public void EnterScope() => innerScopes.Push(new([]));
     public void ExitScope() => innerScopes.Pop();
 
-    public Dictionary<string, LoxValue> GetGlobals() => globalScope.Values;
+    public Dictionary<string, LoxValue> GetGlobals() => [with(globalScope.Values)];
 
     private Scope CurrentScope => innerScopes.Count > 0 ? innerScopes.Peek() : globalScope;
 

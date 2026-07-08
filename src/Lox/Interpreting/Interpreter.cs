@@ -25,7 +25,10 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
 
     public void ExecuteBlock(LoxProgram program, Dictionary<string, LoxValue> localValues)
     {
-        var blockGlobals = environment.GetGlobals().Concat(localValues).ToDictionary();
+        var blockGlobals = environment.GetGlobals();
+        foreach (var (name, value) in localValues)
+            blockGlobals[name] = value;
+
         var blockInterpreter = new Interpreter(blockGlobals);
         blockInterpreter.Interpret(program);
     }
