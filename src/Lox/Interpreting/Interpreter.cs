@@ -26,8 +26,8 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
     public void ExecuteBlock(LoxProgram program, Dictionary<string, LoxValue> localValues)
     {
         var blockGlobals = environment.GetGlobals().Concat(localValues).ToDictionary();
-        var innerInterpreor = new Interpreter(blockGlobals);
-        innerInterpreor.Interpret(program);
+        var blockInterpreter = new Interpreter(blockGlobals);
+        blockInterpreter.Interpret(program);
     }
 
     private Unit Execute(Stmt stmt) => stmt switch

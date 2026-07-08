@@ -27,7 +27,7 @@ public class Environment(Dictionary<string, LoxValue> globals)
         return containingScope.Values[identifier.Name];
     }
 
-    public void EnterScope() => innerScopes.Push(new());
+    public void EnterScope() => innerScopes.Push(new([]));
     public void ExitScope() => innerScopes.Pop();
 
     public Dictionary<string, LoxValue> GetGlobals() => globalScope.Values;
@@ -38,8 +38,5 @@ public class Environment(Dictionary<string, LoxValue> globals)
         => innerScopes.FirstOrDefault(scope => scope.Values.ContainsKey(name))
             ?? (globalScope.Values.ContainsKey(name) ? globalScope : null);
 
-    private record Scope(Dictionary<string, LoxValue> Values)
-    {
-        public Scope() : this([]) { }
-    }
+    private record Scope(Dictionary<string, LoxValue> Values);
 }
