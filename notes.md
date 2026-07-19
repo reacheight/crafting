@@ -17,6 +17,10 @@ private void Execute(Stmt stmt) => _ = stmt switch
 };
 ```
 
-not sure what i prefer.
+not sure what i prefer. **upd**: actually discard assignment doesn't work like this, it only worked for me at the moment, becase all my Execute\*Stmt functions were already written to return unit.
 
 the book itslef is really nice, i really like this approach when we build a fully working but really small subset of the language first and then enrich it step by step.
+
+## 10 functions
+
+had to rewrite my first Environment implementation based on stack. it felt more natural for a thing called call stack to me, but it doesn't work with storing closures.

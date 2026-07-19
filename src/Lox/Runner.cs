@@ -1,5 +1,4 @@
 ﻿using Lox.Interpreting;
-using Lox.Interpreting.Globals;
 using Lox.Lexing;
 using Lox.Parsing;
 
@@ -10,10 +9,7 @@ public static class Runner
     private static bool HadSyntaxError { get; set; }
     private static bool HadRuntimeError { get; set; }
 
-    private static readonly Interpreter interpreter = new(new()
-    {
-        ["clock"] = new Clock(),
-    });
+    private static readonly Interpreter interpreter = new();
 
     public static async Task RunFileAsync(string path)
     {

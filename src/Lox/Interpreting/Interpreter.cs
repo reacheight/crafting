@@ -1,14 +1,20 @@
 ﻿using Lox.Interpreting.Globals;
 using Lox.Parsing;
 using Lox.Parsing.Syntax;
+using Lox.Utils;
 
 namespace Lox.Interpreting;
 
-public class Interpreter(Dictionary<string, LoxValue> globals)
+public class Interpreter
 {
-    private record struct Unit;
+    private readonly Environment globals = new();
+    private Environment environment;
 
-    private readonly Environment environment = new(globals);
+    public Interpreter()
+    {
+        globals.Define("clock", new(new Clock()));
+        environment = globals;
+    }
 
     public void Interpret(LoxProgram program)
     {
@@ -23,22 +29,12 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
         }
     }
 
-    public void ExecuteBlock(LoxProgram program, Dictionary<string, LoxValue> localValues)
-    {
-        var blockGlobals = environment.GetGlobals();
-        foreach (var (name, value) in localValues)
-            blockGlobals[name] = value;
-
-        var blockInterpreter = new Interpreter(blockGlobals);
-        blockInterpreter.Interpret(program);
-    }
-
     private Unit Execute(Stmt stmt) => stmt switch
     {
         ExprStmt exprStmt => ExecuteExprStmt(exprStmt),
         PrintStmt printStmt => ExecutePrintStmt(printStmt),
         VarDecl varDecl => ExecuteVarDecl(varDecl),
-        Block block => ExecuteBlock(block.Statements),
+        Block block => ExecuteBlock(block.Statements, new Environment(environment)),
         IfStmt ifStmt => ExecuteIf(ifStmt),
         WhileStmt whileStmt => ExecuteWhile(whileStmt),
         BreakStmt => throw new BreakException(),
@@ -54,8 +50,8 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
 
     private Unit ExecuteFunDecl(FunDecl decl)
     {
-        var func = new LoxFunction(decl);
-        environment.DefineVariable(decl.Identifier.Name, func);
+        var func = new LoxFunction(decl, environment);
+        environment.Define(decl.Identifier.Name, func);
         return new();
     }
 
@@ -84,14 +80,22 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
         return new();
     }
 
-    private Unit ExecuteBlock(List<Stmt> statements)
+    public Unit ExecuteBlock(List<Stmt> statements, Environment environment)
     {
-        environment.EnterScope();
+        var prevEnv = this.environment;
 
-        foreach (var stmt in statements)
-            Execute(stmt);
+        try
+        {
+            this.environment = environment;
 
-        environment.ExitScope();
+            foreach (var stmt in statements)
+                Execute(stmt);
+        }
+        finally
+        {
+            this.environment = prevEnv;
+        }
+
         return new();
     }
 
@@ -114,14 +118,14 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
             ? Evaluate(decl.Initializer.Value)
             : new LoxValue(new Nil());
 
-        environment.DefineVariable(decl.Identifier.Name, val);
+        environment.Define(decl.Identifier.Name, val);
         return new();
     }
 
     private LoxValue Evaluate(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
-        Variable variable => environment.GetVariableValue(variable.Identifier),
+        Variable variable => environment.Get(variable.Identifier),
         Grouping grouping => Evaluate(grouping.Expr),
         UnaryExpr unary => EvaluateUnary(unary),
         BinaryExpr binary => EvaluateBinary(binary),
@@ -150,7 +154,7 @@ public class Interpreter(Dictionary<string, LoxValue> globals)
     private LoxValue EvaluateAssignment(AssignmentExpr assignment)
     {
         var val = Evaluate(assignment.Value);
-        environment.AssignVariable(assignment.Target, val);
+        environment.Assign(assignment.Target, val);
         return val;
     }
 

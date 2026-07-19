@@ -2,41 +2,37 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class Environment(Dictionary<string, LoxValue> globals)
+public class Environment(Environment? parent = null)
 {
-    private readonly Scope globalScope = new(globals);
-    private readonly Stack<Scope> innerScopes = new();
+    private readonly Dictionary<string, LoxValue> values = [];
 
-    public void DefineVariable(string name, LoxValue value) => CurrentScope.Values[name] = value;
+    public void Define(string name, LoxValue value) => values[name] = value;
 
-    public void AssignVariable(IdentifierInfo identifier, LoxValue value)
+    public LoxValue Get(IdentifierInfo id)
     {
-        var containingScope =
-            FindContainingScope(identifier.Name)
-            ?? throw new RuntimeException(identifier.Location, $"Can't assign undefined variable '{identifier.Name}'.");
+        if (values.TryGetValue(id.Name, out var val))
+            return val;
 
-        containingScope.Values[identifier.Name] = value;
+        if (parent is not null)
+            return parent.Get(id);
+
+        throw new RuntimeException(id.Location, $"Undefined variable '{id.Name}'.");
     }
 
-    public LoxValue GetVariableValue(IdentifierInfo identifier)
+    public void Assign(IdentifierInfo id, LoxValue value)
     {
-        var containingScope =
-            FindContainingScope(identifier.Name)
-            ?? throw new RuntimeException(identifier.Location, $"Undefined variable '{identifier.Name}'.");
+        if (values.ContainsKey(id.Name))
+        {
+            values[id.Name] = value;
+            return;
+        }
 
-        return containingScope.Values[identifier.Name];
+        if (parent is not null)
+        {
+            parent.Assign(id, value);
+            return;
+        }
+
+        throw new RuntimeException(id.Location, $"Can't assign undefined variable '{id.Name}'.");
     }
-
-    public void EnterScope() => innerScopes.Push(new([]));
-    public void ExitScope() => innerScopes.Pop();
-
-    public Dictionary<string, LoxValue> GetGlobals() => [with(globalScope.Values)];
-
-    private Scope CurrentScope => innerScopes.Count > 0 ? innerScopes.Peek() : globalScope;
-
-    private Scope? FindContainingScope(string name)
-        => innerScopes.FirstOrDefault(scope => scope.Values.ContainsKey(name))
-            ?? (globalScope.Values.ContainsKey(name) ? globalScope : null);
-
-    private record Scope(Dictionary<string, LoxValue> Values);
 }
