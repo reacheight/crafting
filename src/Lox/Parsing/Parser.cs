@@ -30,14 +30,21 @@ public class Parser(List<Token> tokens)
     private Stmt Declaration() => Peek.Type switch
     {
         Var => AdvanceAnd(VarDeclaration),
-        Fun => AdvanceAnd(() => Function("function")),
+        Fun when Next.Type is Identifier => AdvanceAnd(() => Function("function")),
         _ => Statement(),
     };
 
     private Stmt Function(string kind)
     {
         var name = ConsumeIdentifier($"Expect {kind} name.");
-        Consume<LeftParen>($"Expect '(' after {kind} name.");
+        var (parameters, body) = FuncParametersAndBody(kind);
+
+        return new FunDecl(name, parameters, body);
+    }
+
+    private (List<IdentifierInfo>, List<Stmt>) FuncParametersAndBody(string kind)
+    {
+        Consume<LeftParen>($"Expect '(' after {kind}.");
 
         var parameters = new List<IdentifierInfo>();
 
@@ -63,11 +70,7 @@ public class Parser(List<Token> tokens)
 
         funCount--;
 
-        return new FunDecl(name, parameters, body);
-
-        IdentifierInfo ConsumeIdentifier(string errorMessage) => Peek.Type is Identifier ident
-            ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
-            : throw new ParseException(Peek, errorMessage);
+        return (parameters, body);
     }
 
     private Stmt VarDeclaration()
@@ -330,8 +333,15 @@ public class Parser(List<Token> tokens)
             Consume<RightParen>("Expect ')' after expression.");
             return new Grouping(expr);
         }),
+        Fun => AdvanceAnd(Lambda),
         _ => throw new ParseException(Peek, "Expect expression."),
     };
+
+    private LambdaExpr Lambda()
+    {
+        var (parameters, body) = FuncParametersAndBody("lambda");
+        return new LambdaExpr(parameters, body);
+    }
 
 #pragma warning disable CS8509
     private static BinaryOperatorType ToBinaryOperatorType(TokenType type) => type switch
@@ -365,6 +375,10 @@ public class Parser(List<Token> tokens)
         Advance();
     }
 
+    private IdentifierInfo ConsumeIdentifier(string errorMessage) => Peek.Type is Identifier ident
+        ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
+        : throw new ParseException(Peek, errorMessage);
+
     private bool AdvanceIfMatch(Predicate<TokenType> predicate)
     {
         if (!predicate(Peek.Type))
@@ -390,5 +404,6 @@ public class Parser(List<Token> tokens)
     private bool IsAtEnd => Peek.Type is Eof;
 
     private Token Peek => tokens[current];
+    private Token Next => tokens[current + 1];
     private Token Previous => tokens[current - 1];
 }

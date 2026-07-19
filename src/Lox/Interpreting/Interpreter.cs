@@ -50,7 +50,7 @@ public class Interpreter
 
     private Unit ExecuteFunDecl(FunDecl decl)
     {
-        var func = new LoxFunction(decl, environment);
+        var func = new LoxFunction(decl.Identifier.Name, decl.Parameters, decl.Body, environment);
         environment.Define(decl.Identifier.Name, func);
         return new();
     }
@@ -132,6 +132,7 @@ public class Interpreter
         Ternary ternary => EvaluateTernary(ternary),
         AssignmentExpr assignment => EvaluateAssignment(assignment),
         CallExpr call => EvaluateCall(call),
+        LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment),
     };
 
     private LoxValue EvaluateCall(CallExpr call)

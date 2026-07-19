@@ -2,21 +2,21 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class LoxFunction(FunDecl declaration, Environment closure) : ILoxCallable
+public class LoxFunction(string? name, List<IdentifierInfo> parameters, List<Stmt> body, Environment closure) : ILoxCallable
 {
-    public int Arity => declaration.Parameters.Count;
+    public int Arity => parameters.Count;
 
     public LoxValue Call(Interpreter interpreter, List<LoxValue> arguments)
     {
         var env = new Environment(closure);
 
-        var boundParameters = declaration.Parameters.Select(p => p.Name).Zip(arguments);
+        var boundParameters = parameters.Select(p => p.Name).Zip(arguments);
         foreach (var (name, val) in boundParameters)
             env.Define(name, val);
 
         try
         {
-            interpreter.ExecuteBlock(declaration.Body, env);
+            interpreter.ExecuteBlock(body, env);
         }
         catch (ReturnException ret)
         {
@@ -26,5 +26,5 @@ public class LoxFunction(FunDecl declaration, Environment closure) : ILoxCallabl
         return new Nil();
     }
 
-    public override string ToString() => $"<fn {declaration.Identifier.Name}>";
+    public override string ToString() => name is null ? "<lambda>" : $"<fn {name}>";
 }
