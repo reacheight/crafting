@@ -23,4 +23,4 @@ the book itslef is really nice, i really like this approach when we build a full
 
 ## 10 functions
 
-had to rewrite my first Environment implementation based on stack. it felt more natural for a thing called call stack to me, but it doesn't work with storing closures.
+had to rewrite my first Environment implementation based on stack. it felt as a more natural approach for a thing called call stack to me, but it doesn't work with storing closures.
