@@ -1,6 +1,7 @@
 ﻿using Lox.Interpreting;
 using Lox.Lexing;
 using Lox.Parsing;
+using Lox.Resolving;
 
 namespace Lox;
 
@@ -47,6 +48,12 @@ public static class Runner
         var parseResult = parser.Parse();
 
         if (HadSyntaxError || parseResult is not LoxProgram program)
+            return;
+
+        var resolver = new Resolver(interpreter);
+        resolver.Resolve(program.Statements);
+
+        if (HadSyntaxError)
             return;
 
         interpreter.Interpret(program);

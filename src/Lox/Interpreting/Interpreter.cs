@@ -8,6 +8,8 @@ namespace Lox.Interpreting;
 public class Interpreter
 {
     private readonly Environment globals = new();
+    private readonly Dictionary<Expr, int> locals = [];
+
     private Environment environment;
 
     public Interpreter()
@@ -15,6 +17,8 @@ public class Interpreter
         globals.Define("clock", new(new Clock()));
         environment = globals;
     }
+
+    public void Resolve(Expr expr, int depth) => locals[expr] = depth;
 
     public void Interpret(LoxProgram program)
     {
@@ -125,7 +129,7 @@ public class Interpreter
     private LoxValue Evaluate(Expr expr) => expr switch
     {
         Literal literal => literal.Value,
-        Variable variable => environment.Get(variable.Identifier),
+        Variable variable => LookUpVariable(variable.Identifier, variable),
         Grouping grouping => Evaluate(grouping.Expr),
         UnaryExpr unary => EvaluateUnary(unary),
         BinaryExpr binary => EvaluateBinary(binary),
@@ -134,6 +138,14 @@ public class Interpreter
         CallExpr call => EvaluateCall(call),
         LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment),
     };
+
+    private LoxValue LookUpVariable(IdentifierInfo identifier, Variable variable)
+    {
+        if (locals.TryGetValue(variable, out var distance))
+            return environment.GetAt(distance, identifier);
+
+        return globals.Get(identifier);
+    }
 
     private LoxValue EvaluateCall(CallExpr call)
     {
@@ -155,7 +167,12 @@ public class Interpreter
     private LoxValue EvaluateAssignment(AssignmentExpr assignment)
     {
         var val = Evaluate(assignment.Value);
-        environment.Assign(assignment.Target, val);
+
+        if (locals.TryGetValue(assignment, out var distance))
+            environment.AssignAt(distance, assignment.Target, val);
+        else
+            globals.Assign(assignment.Target, val);
+
         return val;
     }
 
