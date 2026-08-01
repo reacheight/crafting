@@ -129,9 +129,19 @@ public class Resolver(Interpreter interpreter)
         LambdaExpr lambda => ResolveLambdaExpr(lambda),
         GetExpr getExpr => Resolve(getExpr.Instance),
         SetExpr setExpr => ResolveSetExpr(setExpr),
+        Ternary ternary => ResolveTernary(ternary),
 
-        _ => new(),
+        Literal => new(),
     };
+
+    private Unit ResolveTernary(Ternary ternary)
+    {
+        Resolve(ternary.Condition);
+        Resolve(ternary.OnTrue);
+        Resolve(ternary.OnFalse);
+
+        return new();
+    }
 
     private Unit ResolveSetExpr(SetExpr setExpr)
     {
