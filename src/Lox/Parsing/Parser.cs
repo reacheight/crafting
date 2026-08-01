@@ -31,10 +31,24 @@ public class Parser(List<Token> tokens)
     {
         Var => AdvanceAnd(VarDeclaration),
         Fun when Next.Type is Identifier => AdvanceAnd(() => Function("function")),
+        Class => AdvanceAnd(ClassDeclaration),
         _ => Statement(),
     };
 
-    private Stmt Function(string kind)
+    private Stmt ClassDeclaration()
+    {
+        var name = ConsumeIdentifier("Expect class name.");
+        Consume<LeftBrace>("Expect '{' after class name.");
+
+        var methods = new List<FunDecl>();
+        while (Peek.Type is not (RightBrace or Eof))
+            methods.Add(Function("method"));
+
+        Consume<RightBrace>("Expect '}' after class body.");
+        return new ClassDecl(name, methods);
+    }
+
+    private FunDecl Function(string kind)
     {
         var name = ConsumeIdentifier($"Expect {kind} name.");
         var (parameters, body) = FuncParametersAndBody(kind);
@@ -73,11 +87,9 @@ public class Parser(List<Token> tokens)
         return (parameters, body);
     }
 
-    private Stmt VarDeclaration()
+    private VarDecl VarDeclaration()
     {
-        var identifierInfo = Peek.Type is Identifier ident
-            ? AdvanceAnd(() => new IdentifierInfo(ident.Name, Previous.Location))
-            : throw new ParseException(Peek, "Expect variable name after 'var'.");
+        var identifierInfo = ConsumeIdentifier("Expect variable name after 'var'.");
 
         var initializer = Peek.Type is Lexing.Equal
             ? AdvanceAnd(Expression)

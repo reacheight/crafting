@@ -26,9 +26,18 @@ public class Resolver(Interpreter interpreter)
         ReturnStmt returnStmt when returnStmt.Expr.HasValue => Resolve(returnStmt.Expr.Value),
         IfStmt ifStmt => ResolveIfStmt(ifStmt),
         WhileStmt whileStmt => ResolveWhileStmt(whileStmt),
+        ClassDecl classDecl => ResolveClassDecl(classDecl),
 
         _ => new(),
     };
+
+    private Unit ResolveClassDecl(ClassDecl classDecl)
+    {
+        Declare(classDecl.Identifier);
+        Define(classDecl.Identifier);
+
+        return new();
+    }
 
     private Unit ResolveWhileStmt(WhileStmt whileStmt)
     {

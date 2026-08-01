@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Lox.Interpreting;
 
-public readonly union LoxValue(string, double, bool, ILoxCallable, Nil)
+public readonly union LoxValue(string, double, bool, ILoxCallable, Nil, LoxInstance)
 {
     public override string ToString() => this switch
     {
@@ -11,6 +11,7 @@ public readonly union LoxValue(string, double, bool, ILoxCallable, Nil)
         double n => n.ToString(CultureInfo.InvariantCulture),
         bool b => b ? "true" : "false",
         ILoxCallable c => c.ToString() ?? "some callable",
+        LoxInstance i => i.ToString() ?? "instance of some class",
     };
 
     public override bool Equals(object? obj)
@@ -24,7 +25,8 @@ public readonly union LoxValue(string, double, bool, ILoxCallable, Nil)
             string otherString => this is string thisString && thisString.Equals(otherString),
             double otherNumber => this is double thisNumber && thisNumber.Equals(otherNumber),
             bool otherBool => this is bool thisBool && thisBool.Equals(otherBool),
-            ILoxCallable => false,
+            ILoxCallable otherCallable => this is ILoxCallable thisCallable && thisCallable.Equals(otherCallable),
+            LoxInstance otherInstance => this is LoxInstance thisInstance && thisInstance.Equals(otherInstance),
         };
     }
 
@@ -35,6 +37,7 @@ public readonly union LoxValue(string, double, bool, ILoxCallable, Nil)
         double n => n.GetHashCode(),
         bool b => b.GetHashCode(),
         ILoxCallable c => c.GetHashCode(),
+        LoxInstance i => i.GetHashCode(),
     };
 
     public static bool operator ==(LoxValue left, LoxValue right) => left.Equals(right);

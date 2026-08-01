@@ -44,7 +44,17 @@ public class Interpreter
         BreakStmt => throw new BreakException(),
         FunDecl funDecl => ExecuteFunDecl(funDecl),
         ReturnStmt returnStmt => ExecuteReturnStmt(returnStmt),
+        ClassDecl classDecl => ExecuteClassDecl(classDecl),
     };
+
+    private Unit ExecuteClassDecl(ClassDecl classDecl)
+    {
+        environment.Define(classDecl.Identifier.Name, new Nil());
+        var @class = new LoxClass(classDecl);
+        environment.Assign(classDecl.Identifier, @class);
+
+        return new();
+    }
 
     private Unit ExecuteReturnStmt(ReturnStmt stmt)
     {
