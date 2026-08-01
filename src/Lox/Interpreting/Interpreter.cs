@@ -1,4 +1,5 @@
 ﻿using Lox.Interpreting.Globals;
+using Lox.Lexing;
 using Lox.Parsing;
 using Lox.Parsing.Syntax;
 using Lox.Utils;
@@ -147,7 +148,22 @@ public class Interpreter
         AssignmentExpr assignment => EvaluateAssignment(assignment),
         CallExpr call => EvaluateCall(call),
         LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment),
+        GetExpr getExpr => EvaluateGet(getExpr),
+        SetExpr setExpr => EvaluateSet(setExpr),
     };
+
+    private LoxValue EvaluateSet(SetExpr setExpr)
+        => TryEvaluateInstance(setExpr.Instance, setExpr.Name.Location)
+            .Set(setExpr.Name, Evaluate(setExpr.Value));
+
+    private LoxValue EvaluateGet(GetExpr getExpr)
+        => TryEvaluateInstance(getExpr.Instance, getExpr.Name.Location)
+            .Get(getExpr.Name);
+
+    private LoxInstance TryEvaluateInstance(Expr expr, SourceLocation location)
+        => Evaluate(expr) is LoxInstance instance
+            ? instance
+            : throw new RuntimeException(location, "Only instances have properties.");
 
     private LoxValue LookUpVariable(IdentifierInfo identifier, Variable variable)
     {
@@ -214,12 +230,12 @@ public class Interpreter
                 ? throw new RuntimeException(binary.Operator.Location, "Division by zero.")
                 : l / r),
             Multiply => ExecuteOnNumbers((l, r) => l * r),
-            Greater => ExecuteOnNumbers((l, r) => l > r),
-            GreaterEqual => ExecuteOnNumbers((l, r) => l >= r),
-            Less => ExecuteOnNumbers((l, r) => l < r),
-            LessEqual => ExecuteOnNumbers((l, r) => l <= r),
+            Parsing.Syntax.Greater => ExecuteOnNumbers((l, r) => l > r),
+            Parsing.Syntax.GreaterEqual => ExecuteOnNumbers((l, r) => l >= r),
+            Parsing.Syntax.Less => ExecuteOnNumbers((l, r) => l < r),
+            Parsing.Syntax.LessEqual => ExecuteOnNumbers((l, r) => l <= r),
 
-            Equal => Evaluate(binary.Left) == Evaluate(binary.Right),
+            Parsing.Syntax.Equal => Evaluate(binary.Left) == Evaluate(binary.Right),
             NotEqual => Evaluate(binary.Left) != Evaluate(binary.Right),
 
             LogicalAnd => ExecuteLogicalAnd(),

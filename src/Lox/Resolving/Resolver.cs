@@ -33,7 +33,7 @@ public class Resolver(Interpreter interpreter)
 
     private Unit ResolveClassDecl(ClassDecl classDecl)
     {
-        Declare(classDecl.Identifier);
+        Declare(classDecl.Identifier, true);
         Define(classDecl.Identifier);
 
         return new();
@@ -127,9 +127,19 @@ public class Resolver(Interpreter interpreter)
         Grouping grouping => Resolve(grouping.Expr),
         UnaryExpr unary => Resolve(unary.Expr),
         LambdaExpr lambda => ResolveLambdaExpr(lambda),
+        GetExpr getExpr => Resolve(getExpr.Instance),
+        SetExpr setExpr => ResolveSetExpr(setExpr),
 
         _ => new(),
     };
+
+    private Unit ResolveSetExpr(SetExpr setExpr)
+    {
+        Resolve(setExpr.Value);
+        Resolve(setExpr.Instance);
+
+        return new();
+    }
 
     private Unit ResolveLambdaExpr(LambdaExpr lambda)
     {

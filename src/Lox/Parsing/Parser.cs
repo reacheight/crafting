@@ -238,10 +238,12 @@ public class Parser(List<Token> tokens)
             var equal = Previous;
             var val = Assignment();
 
-            if (expr.Value is Variable target)
-                return new AssignmentExpr(target.Identifier, val);
-
-            throw new ParseException(equal, "Invalid assignment target.");
+            return expr.Value switch
+            {
+                Variable variable => new AssignmentExpr(variable.Identifier, val),
+                GetExpr getExpr => new SetExpr(getExpr.Instance, getExpr.Name, val),
+                _ => throw new ParseException(equal, "Invalid assignment target.")
+            };
         }
 
         return expr;
@@ -300,6 +302,8 @@ public class Parser(List<Token> tokens)
 
             if (Peek.Type is LeftParen)
                 expr = AdvanceAnd(() => FinishCall(expr));
+            else if (Peek.Type is Dot)
+                expr = AdvanceAnd(() => new GetExpr(expr, ConsumeIdentifier("Expect property name after '.'.")));
             else
                 break;
         }
