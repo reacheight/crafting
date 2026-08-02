@@ -2,7 +2,7 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class LoxFunction(string? name, List<IdentifierInfo> parameters, List<Stmt> body, Environment closure) : ILoxCallable
+public class LoxFunction(string? name, List<IdentifierInfo> parameters, List<Stmt> body, Environment closure, bool isInit) : ILoxCallable
 {
     public int Arity => parameters.Count;
 
@@ -20,17 +20,17 @@ public class LoxFunction(string? name, List<IdentifierInfo> parameters, List<Stm
         }
         catch (ReturnException ret)
         {
-            return ret.Value;
+            return isInit ? closure.GetAt(0, "this") : ret.Value;
         }
 
-        return new Nil();
+        return isInit ? closure.GetAt(0, "this") : new Nil();
     }
 
     public LoxFunction Bind(LoxInstance instance)
     {
         var methodEnv = new Environment(closure);
         methodEnv.Define("this", instance);
-        return new LoxFunction(name, parameters, body, methodEnv);
+        return new LoxFunction(name, parameters, body, methodEnv, isInit);
     }
 
     public override string ToString() => name is null ? "<lambda>" : $"<fn {name}>";

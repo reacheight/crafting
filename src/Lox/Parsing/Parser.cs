@@ -9,6 +9,7 @@ public class Parser(List<Token> tokens)
     private int loopsCount = 0;
     private int funCount = 0;
     private int classCount = 0;
+    private bool isInInit = false;
 
     public ParseResult Parse()
     {
@@ -57,7 +58,13 @@ public class Parser(List<Token> tokens)
     private FunDecl Function(string kind)
     {
         var name = ConsumeIdentifier($"Expect {kind} name.");
+
+        var prevIsInInit = isInInit;
+        isInInit = kind is "method" && name.Name is "init";
+
         var (parameters, body) = FuncParametersAndBody(kind);
+
+        isInInit = prevIsInInit;
 
         return new FunDecl(name, parameters, body);
     }
@@ -120,7 +127,7 @@ public class Parser(List<Token> tokens)
 
     private Stmt ReturnStatement()
     {
-        var keywrod = Previous;
+        var keyword = Previous;
 
         if (funCount is 0)
             throw new ParseException(Previous, "'return' can't be used outside function body.");
@@ -129,8 +136,11 @@ public class Parser(List<Token> tokens)
             ? (Expr?)null
             : Expression();
 
+        if (isInInit && expr.HasValue)
+            throw new ParseException(Previous, "'return' can't be used with value inside a class constructor.");
+
         Consume<Semicolon>($"Expect ';' after return{(expr is null ? string.Empty : " value")}.");
-        return new ReturnStmt(expr, keywrod.Location);
+        return new ReturnStmt(expr, keyword.Location);
     }
 
     private Stmt BreakStatement()

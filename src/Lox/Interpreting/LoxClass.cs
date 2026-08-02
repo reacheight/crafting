@@ -6,14 +6,15 @@ public class LoxClass(ClassDecl classDecl, Dictionary<string, LoxFunction> metho
 {
     public string Name => classDecl.Identifier.Name;
 
-    public int Arity => 0;
+    public int Arity => FindMethod("init")?.Arity ?? 0;
 
     public LoxValue Call(Interpreter interpreter, List<LoxValue> arguments)
     {
-        return new LoxInstance(this);
+        var instance = new LoxInstance(this);
+        return FindMethod("init")?.Bind(instance).Call(interpreter, arguments) ?? instance;
     }
 
-    public LoxFunction? GetMethod(string name)
+    public LoxFunction? FindMethod(string name)
         => methods.TryGetValue(name, out var method) ? method : null;
 
     public override string ToString() => Name;

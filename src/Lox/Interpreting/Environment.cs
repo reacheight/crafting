@@ -17,10 +17,10 @@ public class Environment(Environment? parent = null)
             ?? throw new RuntimeException(id.Location, $"Undefined variable '{id.Name}'.");
     }
 
-    public LoxValue GetAt(int depth, IdentifierInfo id)
+    public LoxValue GetAt(int depth, string name)
         => depth is 0
-            ? values[id.Name]
-            : parent!.GetAt(depth - 1, id);
+            ? values[name]
+            : parent!.GetAt(depth - 1, name);
 
     public void Assign(IdentifierInfo id, LoxValue value)
     {

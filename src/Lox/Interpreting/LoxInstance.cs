@@ -11,7 +11,7 @@ public class LoxInstance(LoxClass @class)
         if (fields.TryGetValue(propertyId.Name, out var field))
             return field;
 
-        return @class.GetMethod(propertyId.Name)?.Bind(this)
+        return @class.FindMethod(propertyId.Name)?.Bind(this)
             ?? throw new RuntimeException(propertyId.Location, $"Undefined property {propertyId.Name}.");
     }
 

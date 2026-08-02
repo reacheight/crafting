@@ -54,7 +54,7 @@ public class Interpreter
 
         var methods = classDecl.Methods.ToDictionary(
             m => m.Identifier.Name,
-            m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, environment)
+            m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, environment, m.Identifier.Name is "init")
         );
 
         var @class = new LoxClass(classDecl, methods);
@@ -71,7 +71,7 @@ public class Interpreter
 
     private Unit ExecuteFunDecl(FunDecl decl)
     {
-        var func = new LoxFunction(decl.Identifier.Name, decl.Parameters, decl.Body, environment);
+        var func = new LoxFunction(decl.Identifier.Name, decl.Parameters, decl.Body, environment, false);
         environment.Define(decl.Identifier.Name, func);
         return new();
     }
@@ -153,7 +153,7 @@ public class Interpreter
         Ternary ternary => EvaluateTernary(ternary),
         AssignmentExpr assignment => EvaluateAssignment(assignment),
         CallExpr call => EvaluateCall(call),
-        LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment),
+        LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment, false),
         GetExpr getExpr => EvaluateGet(getExpr),
         SetExpr setExpr => EvaluateSet(setExpr),
         ThisExpr thisExpr => LookUpVariable(new("this", thisExpr.Location), thisExpr),
@@ -175,7 +175,7 @@ public class Interpreter
     private LoxValue LookUpVariable(IdentifierInfo identifier, Expr expr)
     {
         if (locals.TryGetValue(expr, out var distance))
-            return environment.GetAt(distance, identifier);
+            return environment.GetAt(distance, identifier.Name);
 
         return globals.Get(identifier);
     }
