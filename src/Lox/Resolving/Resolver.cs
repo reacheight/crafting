@@ -7,7 +7,6 @@ namespace Lox.Resolving;
 
 public class Resolver(Interpreter interpreter)
 {
-    private record VarState(bool IsDefined, bool IsUsed, SourceLocation Location);
     private readonly Stack<Dictionary<string, VarState>> scopes = [];
 
     public void Resolve(List<Stmt> statements)
@@ -35,6 +34,14 @@ public class Resolver(Interpreter interpreter)
     {
         Declare(classDecl.Identifier, true);
         Define(classDecl.Identifier);
+
+        EnterScope();
+        scopes.Peek()["this"] = new(true, true, null);
+
+        foreach (var method in classDecl.Methods)
+            ResolveFunction(method.Parameters, method.Body);
+
+        ExitScope();
 
         return new();
     }
@@ -130,9 +137,16 @@ public class Resolver(Interpreter interpreter)
         GetExpr getExpr => Resolve(getExpr.Instance),
         SetExpr setExpr => ResolveSetExpr(setExpr),
         Ternary ternary => ResolveTernary(ternary),
+        ThisExpr thisExpr => ResolveThisExpr(thisExpr),
 
         Literal => new(),
     };
+
+    private Unit ResolveThisExpr(ThisExpr thisExpr)
+    {
+        ResolveLocal(thisExpr, "this", false);
+        return new();
+    }
 
     private Unit ResolveTernary(Ternary ternary)
     {
@@ -177,7 +191,7 @@ public class Resolver(Interpreter interpreter)
     private Unit ResolveAssignmentExpr(AssignmentExpr assignmentExpr)
     {
         Resolve(assignmentExpr.Value);
-        ResolveLocal(assignmentExpr, assignmentExpr.Target, false);
+        ResolveLocal(assignmentExpr, assignmentExpr.Target.Name, false);
 
         return new();
     }
@@ -187,19 +201,19 @@ public class Resolver(Interpreter interpreter)
         if (scopes.Count > 0 && scopes.Peek().TryGetValue(varExpr.Identifier.Name, out var state) && !state.IsDefined)
             Runner.ReportError(varExpr.Identifier.Location, "Can't read local variable in its own initializer.");
 
-        ResolveLocal(varExpr, varExpr.Identifier, true);
+        ResolveLocal(varExpr, varExpr.Identifier.Name, true);
 
         return new();
     }
 
-    private void ResolveLocal(Expr expr, IdentifierInfo identifier, bool shouldUse)
+    private void ResolveLocal(Expr expr, string name, bool shouldUse)
     {
         foreach (var (map, i) in scopes.Select((map, i) => (map, i)))
         {
-            if (map.TryGetValue(identifier.Name, out var varState))
+            if (map.TryGetValue(name, out var varState))
             {
                 if (shouldUse)
-                    map[identifier.Name] = varState with { IsUsed = true };
+                    map[name] = varState with { IsUsed = true };
 
                 interpreter.Resolve(expr, i);
                 return;
@@ -213,6 +227,13 @@ public class Resolver(Interpreter interpreter)
     {
         var scope = scopes.Pop();
         foreach (var unusedVar in scope.Where(pair => !pair.Value.IsUsed))
-            Runner.ReportError(unusedVar.Value.Location, $"Unused variable {unusedVar.Key}");
+        {
+            if (unusedVar.Value.Location is { } location)
+                Runner.ReportError(location, $"Unused variable {unusedVar.Key}");
+        }
     }
+
+    // TODO: rewrite this hack with location nullability
+    // "this" has no location since it's not declared explicitly and it's usage should not be tracked
+    private record VarState(bool IsDefined, bool IsUsed, SourceLocation? Location);
 }

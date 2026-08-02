@@ -51,7 +51,13 @@ public class Interpreter
     private Unit ExecuteClassDecl(ClassDecl classDecl)
     {
         environment.Define(classDecl.Identifier.Name, new Nil());
-        var @class = new LoxClass(classDecl);
+
+        var methods = classDecl.Methods.ToDictionary(
+            m => m.Identifier.Name,
+            m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, environment)
+        );
+
+        var @class = new LoxClass(classDecl, methods);
         environment.Assign(classDecl.Identifier, @class);
 
         return new();
@@ -150,6 +156,7 @@ public class Interpreter
         LambdaExpr lambda => new LoxFunction(null, lambda.Parameters, lambda.Body, environment),
         GetExpr getExpr => EvaluateGet(getExpr),
         SetExpr setExpr => EvaluateSet(setExpr),
+        ThisExpr thisExpr => LookUpVariable(new("this", thisExpr.Location), thisExpr),
     };
 
     private LoxValue EvaluateSet(SetExpr setExpr)
@@ -165,9 +172,9 @@ public class Interpreter
             ? instance
             : throw new RuntimeException(location, "Only instances have properties.");
 
-    private LoxValue LookUpVariable(IdentifierInfo identifier, Variable variable)
+    private LoxValue LookUpVariable(IdentifierInfo identifier, Expr expr)
     {
-        if (locals.TryGetValue(variable, out var distance))
+        if (locals.TryGetValue(expr, out var distance))
             return environment.GetAt(distance, identifier);
 
         return globals.Get(identifier);

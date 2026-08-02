@@ -26,5 +26,12 @@ public class LoxFunction(string? name, List<IdentifierInfo> parameters, List<Stm
         return new Nil();
     }
 
+    public LoxFunction Bind(LoxInstance instance)
+    {
+        var methodEnv = new Environment(closure);
+        methodEnv.Define("this", instance);
+        return new LoxFunction(name, parameters, body, methodEnv);
+    }
+
     public override string ToString() => name is null ? "<lambda>" : $"<fn {name}>";
 }

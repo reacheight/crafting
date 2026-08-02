@@ -8,6 +8,7 @@ public class Parser(List<Token> tokens)
     private int current = 0;
     private int loopsCount = 0;
     private int funCount = 0;
+    private int classCount = 0;
 
     public ParseResult Parse()
     {
@@ -40,11 +41,16 @@ public class Parser(List<Token> tokens)
         var name = ConsumeIdentifier("Expect class name.");
         Consume<LeftBrace>("Expect '{' after class name.");
 
+        classCount++;
+
         var methods = new List<FunDecl>();
         while (Peek.Type is not (RightBrace or Eof))
             methods.Add(Function("method"));
 
+        classCount--;
+
         Consume<RightBrace>("Expect '}' after class body.");
+
         return new ClassDecl(name, methods);
     }
 
@@ -337,7 +343,8 @@ public class Parser(List<Token> tokens)
         True => AdvanceAnd(() => new Literal(true)),
         False => AdvanceAnd(() => new Literal(false)),
         Nil => AdvanceAnd(() => new Literal(new Interpreting.Nil())),
-        Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Peek.Location))),
+        This => AdvanceAnd(EvaluateThis),
+        Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Previous.Location))),
         LiteralToken literal => AdvanceAnd(() => literal switch
         {
             StringLiteralToken strLiteral => new Literal(strLiteral.Value),
@@ -352,6 +359,14 @@ public class Parser(List<Token> tokens)
         Fun => AdvanceAnd(Lambda),
         _ => throw new ParseException(Peek, "Expect expression."),
     };
+
+    private ThisExpr EvaluateThis()
+    {
+        if (classCount is 0)
+            throw new ParseException(Previous, "Can't use 'this' outside of a class method.");
+
+        return new ThisExpr(Previous.Location);
+    }
 
     private LambdaExpr Lambda()
     {

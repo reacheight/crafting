@@ -2,7 +2,7 @@ using Lox.Parsing.Syntax;
 
 namespace Lox.Interpreting;
 
-public class LoxClass(ClassDecl classDecl) : ILoxCallable
+public class LoxClass(ClassDecl classDecl, Dictionary<string, LoxFunction> methods) : ILoxCallable
 {
     public string Name => classDecl.Identifier.Name;
 
@@ -12,6 +12,9 @@ public class LoxClass(ClassDecl classDecl) : ILoxCallable
     {
         return new LoxInstance(this);
     }
+
+    public LoxFunction? GetMethod(string name)
+        => methods.TryGetValue(name, out var method) ? method : null;
 
     public override string ToString() => Name;
 }
