@@ -24,3 +24,9 @@ the book itslef is really nice, i really like this approach when we build a full
 ## 10 functions
 
 had to rewrite my first Environment implementation based on stack. it felt as a more natural approach for a thing called call stack to me, but it doesn't work with storing closures.
+
+## 13 inheritance
+
+i actually finished the first chapter and have a working interpreter. even done some challenges. nice.
+
+now i'm trying to address some todos i left. the first one is about internal resolver types for var/name state. at first i designed them not in "parse, don't validate" spirit and they allowed impossible states. to fix it i mixed inheritance and union types. i'm note sure if it's very stupid or genius, but i like how it ended up actually.
