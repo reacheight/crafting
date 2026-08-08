@@ -318,8 +318,6 @@ public class Parser(List<Token> tokens)
 
         while (true)
         {
-            // TODO: add compile time check for 100% noncallable things like literals and keywords?
-
             if (Peek.Type is LeftParen)
                 expr = AdvanceAnd(() => FinishCall(expr));
             else if (Peek.Type is Dot)
@@ -333,6 +331,9 @@ public class Parser(List<Token> tokens)
 
     private Expr FinishCall(Expr callee)
     {
+        if (callee is Literal or ThisExpr)
+            throw new ParseException(Peek, "Can't call literals or 'this'.");
+
         var arguments = new List<Expr>();
 
         if (Peek.Type is not RightParen)
