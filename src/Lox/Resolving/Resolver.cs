@@ -7,7 +7,7 @@ namespace Lox.Resolving;
 
 public class Resolver(Interpreter interpreter)
 {
-    private readonly Stack<Dictionary<string, VarState>> scopes = [];
+    private readonly Stack<Dictionary<string, NameState>> scopes = [];
 
     public void Resolve(List<Stmt> statements)
     {
@@ -32,19 +32,18 @@ public class Resolver(Interpreter interpreter)
 
     private Unit ResolveClassDecl(ClassDecl classDecl)
     {
-        Declare(classDecl.Identifier, true);
-        Define(classDecl.Identifier);
+        Declare(classDecl.Identifier.Name, new DeclaredName(classDecl.Identifier.Location));
 
         if (classDecl.Superclass is { } superclass)
         {
             Resolve(superclass);
 
             EnterScope();
-            scopes.Peek()["super"] = new(true, true, null);
+            Declare("super");
         }
 
         EnterScope();
-        scopes.Peek()["this"] = new(true, true, null);
+        Declare("this");
 
         foreach (var method in classDecl.Methods)
             ResolveFunction(method.Parameters, method.Body);
@@ -77,8 +76,7 @@ public class Resolver(Interpreter interpreter)
 
     private Unit ResolveFunDecl(FunDecl funDecl)
     {
-        Declare(funDecl.Identifier);
-        Define(funDecl.Identifier);
+        Declare(funDecl.Identifier.Name, new DeclaredName(funDecl.Identifier.Location));
 
         ResolveFunction(funDecl.Parameters, funDecl.Body);
 
@@ -90,10 +88,7 @@ public class Resolver(Interpreter interpreter)
         EnterScope();
 
         foreach (var param in parameters)
-        {
-            Declare(param, true);
-            Define(param);
-        }
+            Declare(param.Name, new DeclaredName(param.Location));
 
         Resolve(body);
         ExitScope();
@@ -101,30 +96,39 @@ public class Resolver(Interpreter interpreter)
 
     private Unit ResolveVarDecl(VarDecl varDecl)
     {
-        Declare(varDecl.Identifier);
+        Declare(varDecl.Identifier.Name, new DeclaredVariable(varDecl.Identifier.Location, false));
         if (varDecl.Initializer.HasValue)
             Resolve(varDecl.Initializer.Value);
-        Define(varDecl.Identifier);
+        Define(varDecl.Identifier.Name);
 
         return new();
     }
 
-    private void Define(IdentifierInfo identifier)
+    private void Define(string name)
     {
         if (scopes.Count is 0)
             return;
 
         var scope = scopes.Peek();
-        scope[identifier.Name] = scope[identifier.Name] with { IsDefined = true };
+        if (scope[name] is DeclaredVariable variable)
+            scope[name] = variable with { IsDefined = true };
     }
 
-    private void Declare(IdentifierInfo identifier, bool isUsed = false)
+    private void Declare(string name, DeclaredName state)
     {
         if (scopes.Count is 0)
             return;
 
-        if (!scopes.Peek().TryAdd(identifier.Name, new(false, isUsed, identifier.Location)))
-            Runner.ReportError(identifier.Location, "Already a variable with this name in this scope.");
+        if (!scopes.Peek().TryAdd(name, state))
+            Runner.ReportError(state.Location, "Already a variable with this name in this scope.");
+    }
+
+    private void Declare(string name)
+    {
+        if (scopes.Count is 0)
+            return;
+
+        scopes.Peek()[name] = new ImplicitName();
     }
 
     private Unit ResolveBlock(Block block)
@@ -156,13 +160,13 @@ public class Resolver(Interpreter interpreter)
 
     private Unit ResolveSuper(SuperExpr superExpr)
     {
-        ResolveLocal(superExpr, "super", false);
+        ResolveLocal(superExpr, "super");
         return new();
     }
 
     private Unit ResolveThisExpr(ThisExpr thisExpr)
     {
-        ResolveLocal(thisExpr, "this", false);
+        ResolveLocal(thisExpr, "this");
         return new();
     }
 
@@ -209,29 +213,32 @@ public class Resolver(Interpreter interpreter)
     private Unit ResolveAssignmentExpr(AssignmentExpr assignmentExpr)
     {
         Resolve(assignmentExpr.Value);
-        ResolveLocal(assignmentExpr, assignmentExpr.Target.Name, false);
+        ResolveLocal(assignmentExpr, assignmentExpr.Target.Name);
 
         return new();
     }
 
     private Unit ResolveVarExpr(Variable varExpr)
     {
-        if (scopes.Count > 0 && scopes.Peek().TryGetValue(varExpr.Identifier.Name, out var state) && !state.IsDefined)
+        if (scopes.Count > 0 && scopes.Peek().TryGetValue(varExpr.Identifier.Name, out var state)
+            && state is DeclaredVariable { IsDefined: false })
+        {
             Runner.ReportError(varExpr.Identifier.Location, "Can't read local variable in its own initializer.");
+        }
 
-        ResolveLocal(varExpr, varExpr.Identifier.Name, true);
+        ResolveLocal(varExpr, varExpr.Identifier.Name);
 
         return new();
     }
 
-    private void ResolveLocal(Expr expr, string name, bool shouldUse)
+    private void ResolveLocal(Expr expr, string name)
     {
         foreach (var (map, i) in scopes.Select((map, i) => (map, i)))
         {
-            if (map.TryGetValue(name, out var varState))
+            if (map.TryGetValue(name, out var state))
             {
-                if (shouldUse)
-                    map[name] = varState with { IsUsed = true };
+                if (expr is not AssignmentExpr && state is DeclaredName declarable)
+                    map[name] = declarable with { IsUsed = true };
 
                 interpreter.Resolve(expr, i);
                 return;
@@ -243,15 +250,21 @@ public class Resolver(Interpreter interpreter)
 
     private void ExitScope()
     {
-        var scope = scopes.Pop();
-        foreach (var unusedVar in scope.Where(pair => !pair.Value.IsUsed))
+        foreach (var state in scopes.Pop())
         {
-            if (unusedVar.Value.Location is { } location)
-                Runner.ReportError(location, $"Unused variable {unusedVar.Key}");
+            if (state.Value is DeclaredName { IsUsed: false } declarable)
+                Runner.ReportWarn(declarable.Location, $"Unused declared name {state.Key}.");
         }
     }
 
-    // TODO: rewrite this hack with location nullability
-    // "this" has no location since it's not declared explicitly and it's usage should not be tracked
-    private record VarState(bool IsDefined, bool IsUsed, SourceLocation? Location);
+    private readonly union NameState(DeclaredName, ImplicitName);
+
+    private record DeclaredName(SourceLocation Location)
+    {
+        public bool IsUsed { get; init; }
+    }
+
+    private record DeclaredVariable(SourceLocation Location, bool IsDefined) : DeclaredName(Location);
+
+    private record struct ImplicitName();
 }

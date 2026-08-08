@@ -70,4 +70,9 @@ public static class Runner
         Console.Error.WriteLine($"[line {location.Line}] SyntaxError: {message}");
         HadSyntaxError = true;
     }
+
+    public static void ReportWarn(SourceLocation location, string message)
+    {
+        Console.Error.WriteLine($"[line {location.Line}] Warning: {message}");
+    }
 }

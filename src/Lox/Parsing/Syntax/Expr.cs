@@ -19,7 +19,6 @@ public readonly union Expr(
     SuperExpr
 );
 
-// TODO: extend LiteralToken with bools and nil and use it here
 public class Literal(LoxValue value)
 {
     public LoxValue Value { get; } = value;
