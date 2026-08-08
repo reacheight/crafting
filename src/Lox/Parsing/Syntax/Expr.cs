@@ -3,7 +3,21 @@ using Lox.Lexing;
 
 namespace Lox.Parsing.Syntax;
 
-public readonly union Expr(Literal, UnaryExpr, BinaryExpr, Grouping, Ternary, Variable, AssignmentExpr, CallExpr, LambdaExpr, GetExpr, SetExpr, ThisExpr);
+public readonly union Expr(
+    Literal,
+    UnaryExpr,
+    BinaryExpr,
+    Grouping,
+    Ternary,
+    Variable,
+    AssignmentExpr,
+    CallExpr,
+    LambdaExpr,
+    GetExpr,
+    SetExpr,
+    ThisExpr,
+    SuperExpr
+);
 
 // TODO: extend LiteralToken with bools and nil and use it here
 public class Literal(LoxValue value)
@@ -76,4 +90,10 @@ public class SetExpr(Expr instance, IdentifierInfo name, Expr value)
 public class ThisExpr(SourceLocation location)
 {
     public SourceLocation Location { get; } = location;
+}
+
+public class SuperExpr(SourceLocation keywordLocation, IdentifierInfo method)
+{
+    public SourceLocation KeywordLocation { get; } = keywordLocation;
+    public IdentifierInfo Method { get; } = method;
 }

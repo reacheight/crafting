@@ -6,10 +6,10 @@ namespace Lox.Parsing;
 public class Parser(List<Token> tokens)
 {
     private int current = 0;
+
     private int loopsCount = 0;
-    private int funCount = 0;
-    private int classCount = 0;
-    private bool isInInit = false;
+    private FunType currentFunction = FunType.None;
+    private ClassType currentClass = ClassType.None;
 
     public ParseResult Parse()
     {
@@ -40,36 +40,39 @@ public class Parser(List<Token> tokens)
     private Stmt ClassDeclaration()
     {
         var name = ConsumeIdentifier("Expect class name.");
+
+        var baseName = Peek.Type is Lexing.Less
+            ? AdvanceAnd(() => new Variable(ConsumeIdentifier("Expect superclass name.")))
+            : null;
+
+        if (baseName?.Identifier?.Name == name.Name)
+            Runner.ReportError(baseName.Identifier.Location, "A class can't inherit from itself.");
+
         Consume<LeftBrace>("Expect '{' after class name.");
 
-        classCount++;
+        var prevClassType = currentClass;
+        currentClass = baseName is null ? ClassType.Class : ClassType.Subclass;
 
         var methods = new List<FunDecl>();
         while (Peek.Type is not (RightBrace or Eof))
             methods.Add(Function("method"));
 
-        classCount--;
+        currentClass = prevClassType;
 
         Consume<RightBrace>("Expect '}' after class body.");
 
-        return new ClassDecl(name, methods);
+        return new ClassDecl(name, baseName, methods);
     }
 
     private FunDecl Function(string kind)
     {
         var name = ConsumeIdentifier($"Expect {kind} name.");
-
-        var prevIsInInit = isInInit;
-        isInInit = kind is "method" && name.Name is "init";
-
-        var (parameters, body) = FuncParametersAndBody(kind);
-
-        isInInit = prevIsInInit;
+        var (parameters, body) = FuncParametersAndBody(kind, kind is "method" && name.Name is "init");
 
         return new FunDecl(name, parameters, body);
     }
 
-    private (List<IdentifierInfo>, List<Stmt>) FuncParametersAndBody(string kind)
+    private (List<IdentifierInfo>, List<Stmt>) FuncParametersAndBody(string kind, bool isInit = false)
     {
         Consume<LeftParen>($"Expect '(' after {kind}.");
 
@@ -91,11 +94,12 @@ public class Parser(List<Token> tokens)
         Consume<RightParen>("Expect ')' after parameters.");
         Consume<LeftBrace>($"Expect '{{' before {kind} body.");
 
-        funCount++;
+        var prevFunType = currentFunction;
+        currentFunction = isInit ? FunType.Init : FunType.Function;
 
         var body = Block();
 
-        funCount--;
+        currentFunction = prevFunType;
 
         return (parameters, body);
     }
@@ -129,14 +133,14 @@ public class Parser(List<Token> tokens)
     {
         var keyword = Previous;
 
-        if (funCount is 0)
+        if (currentFunction is FunType.None)
             throw new ParseException(Previous, "'return' can't be used outside function body.");
 
         var expr = Peek.Type is Semicolon
             ? (Expr?)null
             : Expression();
 
-        if (isInInit && expr.HasValue)
+        if (currentFunction is FunType.Init && expr.HasValue)
             throw new ParseException(Previous, "'return' can't be used with value inside a class constructor.");
 
         Consume<Semicolon>($"Expect ';' after return{(expr is null ? string.Empty : " value")}.");
@@ -353,7 +357,8 @@ public class Parser(List<Token> tokens)
         True => AdvanceAnd(() => new Literal(true)),
         False => AdvanceAnd(() => new Literal(false)),
         Nil => AdvanceAnd(() => new Literal(new Interpreting.Nil())),
-        This => AdvanceAnd(EvaluateThis),
+        This => AdvanceAnd(ParseThis),
+        Super => AdvanceAnd(ParseSuper),
         Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Previous.Location))),
         LiteralToken literal => AdvanceAnd(() => literal switch
         {
@@ -370,9 +375,25 @@ public class Parser(List<Token> tokens)
         _ => throw new ParseException(Peek, "Expect expression."),
     };
 
-    private ThisExpr EvaluateThis()
+    private SuperExpr ParseSuper()
     {
-        if (classCount is 0)
+        if (currentClass is ClassType.None)
+            throw new ParseException(Previous, "Can't use 'super' outside of a class.");
+
+        if (currentClass is ClassType.Class)
+            throw new ParseException(Previous, "Can't use 'super' in a class with no superclass.");
+
+        var keyword = Previous;
+
+        Consume<Dot>("Expect '.' after 'super'.");
+        var method = ConsumeIdentifier("Expect superclass method name.");
+
+        return new SuperExpr(keyword.Location, method);
+    }
+
+    private ThisExpr ParseThis()
+    {
+        if (currentClass is ClassType.None)
             throw new ParseException(Previous, "Can't use 'this' outside of a class method.");
 
         return new ThisExpr(Previous.Location);
@@ -447,4 +468,18 @@ public class Parser(List<Token> tokens)
     private Token Peek => tokens[current];
     private Token Next => tokens[current + 1];
     private Token Previous => tokens[current - 1];
+
+    private enum FunType
+    {
+        None,
+        Function,
+        Init,
+    }
+
+    private enum ClassType
+    {
+        None,
+        Class,
+        Subclass,
+    }
 }

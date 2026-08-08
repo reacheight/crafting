@@ -35,6 +35,14 @@ public class Resolver(Interpreter interpreter)
         Declare(classDecl.Identifier, true);
         Define(classDecl.Identifier);
 
+        if (classDecl.Superclass is { } superclass)
+        {
+            Resolve(superclass);
+
+            EnterScope();
+            scopes.Peek()["super"] = new(true, true, null);
+        }
+
         EnterScope();
         scopes.Peek()["this"] = new(true, true, null);
 
@@ -42,6 +50,9 @@ public class Resolver(Interpreter interpreter)
             ResolveFunction(method.Parameters, method.Body);
 
         ExitScope();
+
+        if (classDecl.Superclass is not null)
+            ExitScope();
 
         return new();
     }
@@ -138,9 +149,16 @@ public class Resolver(Interpreter interpreter)
         SetExpr setExpr => ResolveSetExpr(setExpr),
         Ternary ternary => ResolveTernary(ternary),
         ThisExpr thisExpr => ResolveThisExpr(thisExpr),
+        SuperExpr superExpr => ResolveSuper(superExpr),
 
         Literal => new(),
     };
+
+    private Unit ResolveSuper(SuperExpr superExpr)
+    {
+        ResolveLocal(superExpr, "super", false);
+        return new();
+    }
 
     private Unit ResolveThisExpr(ThisExpr thisExpr)
     {

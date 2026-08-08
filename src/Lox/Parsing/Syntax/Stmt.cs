@@ -13,4 +13,4 @@ public record WhileStmt(Expr Condition, Stmt Body);
 public record struct BreakStmt();
 public record FunDecl(IdentifierInfo Identifier, List<IdentifierInfo> Parameters, List<Stmt> Body);
 public record ReturnStmt(Expr? Expr, SourceLocation KeywordLocation);
-public record ClassDecl(IdentifierInfo Identifier, List<FunDecl> Methods);
+public record ClassDecl(IdentifierInfo Identifier, Variable? Superclass, List<FunDecl> Methods);

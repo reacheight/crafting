@@ -50,14 +50,29 @@ public class Interpreter
 
     private Unit ExecuteClassDecl(ClassDecl classDecl)
     {
+        var superclass = classDecl.Superclass switch
+        {
+            { } variable when Evaluate(variable) is LoxClass c => c,
+            { } variable =>
+                throw new RuntimeException(variable.Identifier.Location, "Superclass must be a class."),
+            _ => null,
+        };
+
         environment.Define(classDecl.Identifier.Name, new Nil());
+
+        var classClosure = superclass is not null
+            ? new Environment(environment)
+            : environment;
+
+        if (superclass is not null)
+            classClosure.Define("super", superclass);
 
         var methods = classDecl.Methods.ToDictionary(
             m => m.Identifier.Name,
-            m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, environment, m.Identifier.Name is "init")
+            m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, classClosure, m.Identifier.Name is "init")
         );
 
-        var @class = new LoxClass(classDecl, methods);
+        var @class = new LoxClass(classDecl, methods, superclass);
         environment.Assign(classDecl.Identifier, @class);
 
         return new();
@@ -157,7 +172,21 @@ public class Interpreter
         GetExpr getExpr => EvaluateGet(getExpr),
         SetExpr setExpr => EvaluateSet(setExpr),
         ThisExpr thisExpr => LookUpVariable(new("this", thisExpr.Location), thisExpr),
+        SuperExpr superExpr => EvaluateSuper(superExpr),
     };
+
+    private LoxValue EvaluateSuper(SuperExpr superExpr)
+    {
+        var superDistance = locals[superExpr];
+        if (environment.GetAt(superDistance, "super") is not LoxClass superclass)
+            throw new RuntimeException(superExpr.KeywordLocation, "'super' is not a class somehow.");
+
+        if (environment.GetAt(superDistance - 1, "this") is not LoxInstance instance)
+            throw new RuntimeException(superExpr.KeywordLocation, "Couldn't resolve current instance depending on 'super' for some reason.");
+
+        return superclass.FindMethod(superExpr.Method.Name)?.Bind(instance)
+            ?? throw new RuntimeException(superExpr.Method.Location, $"Undefined base method {superExpr.Method.Name}.");
+    }
 
     private LoxValue EvaluateSet(SetExpr setExpr)
         => TryEvaluateInstance(setExpr.Instance, setExpr.Name.Location)
