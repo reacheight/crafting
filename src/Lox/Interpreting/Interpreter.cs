@@ -1,6 +1,5 @@
 ﻿using Lox.Interpreting.Globals;
 using Lox.Lexing;
-using Lox.Parsing;
 using Lox.Parsing.Syntax;
 using Lox.Utils;
 
@@ -21,11 +20,11 @@ public class Interpreter
 
     public void Resolve(Expr expr, int depth) => locals[expr] = depth;
 
-    public void Interpret(LoxProgram program)
+    public void Interpret(List<Stmt> statements)
     {
         try
         {
-            foreach (var stmt in program.Statements)
+            foreach (var stmt in statements)
                 Execute(stmt);
         }
         catch (RuntimeException error)

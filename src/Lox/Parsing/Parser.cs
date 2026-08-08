@@ -11,30 +11,37 @@ public class Parser(List<Token> tokens)
     private FunType currentFunction = FunType.None;
     private ClassType currentClass = ClassType.None;
 
-    public ParseResult Parse()
+    public List<Stmt> Parse()
+    {
+        var statements = new List<Stmt>();
+        while (!IsAtEnd)
+        {
+            if (Declaration() is var stmt && stmt.HasValue)
+                statements.Add(stmt.Value);
+        }
+
+        return statements;
+    }
+
+    private Stmt? Declaration()
     {
         try
         {
-            var statements = new List<Stmt>();
-            while (!IsAtEnd)
-                statements.Add(Declaration());
-
-            return new LoxProgram(statements);
+            return Peek.Type switch
+            {
+                Var => AdvanceAnd(VarDeclaration),
+                Fun when Next.Type is Identifier => AdvanceAnd(() => Function("function")),
+                Class => AdvanceAnd(ClassDeclaration),
+                _ => Statement(),
+            };
         }
         catch (ParseException parseException)
         {
             Runner.ReportError(parseException.Token.Location, parseException.Message);
-            return new ParseError(parseException.Token, parseException.Message);
+            Synchronize();
+            return null;
         }
     }
-
-    private Stmt Declaration() => Peek.Type switch
-    {
-        Var => AdvanceAnd(VarDeclaration),
-        Fun when Next.Type is Identifier => AdvanceAnd(() => Function("function")),
-        Class => AdvanceAnd(ClassDeclaration),
-        _ => Statement(),
-    };
 
     private Stmt ClassDeclaration()
     {
@@ -225,7 +232,11 @@ public class Parser(List<Token> tokens)
     {
         var statements = new List<Stmt>();
         while (Peek.Type is not (RightBrace or Eof))
-            statements.Add(Declaration());
+        {
+            if (Declaration() is var stmt && stmt.HasValue)
+                statements.Add(stmt.Value);
+        }
+
         Consume<RightBrace>("Expect '}' after block.");
         return statements;
     }
@@ -429,6 +440,19 @@ public class Parser(List<Token> tokens)
     };
 #pragma warning restore CS8509
 
+    private void Synchronize()
+    {
+        Advance();
+
+        while (!IsAtEnd)
+        {
+            if (Previous.Type is Semicolon or Class or Fun or Var or For or If or While or Print or Return)
+                return;
+
+            Advance();
+        }
+    }
+
     private void Consume<T>(string errorMessage)
     {
         if (Peek.Type is not T)
@@ -455,6 +479,7 @@ public class Parser(List<Token> tokens)
         Advance();
         return parse();
     }
+
 
     private Token Advance()
     {

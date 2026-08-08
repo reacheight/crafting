@@ -7,7 +7,7 @@ namespace Lox;
 
 public static class Runner
 {
-    private static bool HadSyntaxError { get; set; }
+    private static bool HadStaticError { get; set; }
     private static bool HadRuntimeError { get; set; }
 
     private static readonly Interpreter interpreter = new();
@@ -17,7 +17,7 @@ public static class Runner
         var source = await File.ReadAllTextAsync(path);
         Run(source);
 
-        if (HadSyntaxError)
+        if (HadStaticError)
             System.Environment.Exit(65);
 
         if (HadRuntimeError)
@@ -35,7 +35,7 @@ public static class Runner
                 break;
 
             Run(input);
-            HadSyntaxError = false;
+            HadStaticError = false;
         }
     }
 
@@ -45,18 +45,18 @@ public static class Runner
         var tokens = lexer.Tokenize();
 
         var parser = new Parser([.. tokens]);
-        var parseResult = parser.Parse();
+        var statements = parser.Parse();
 
-        if (HadSyntaxError || parseResult is not LoxProgram program)
+        if (HadStaticError)
             return;
 
         var resolver = new Resolver(interpreter);
-        resolver.Resolve(program.Statements);
+        resolver.Resolve(statements);
 
-        if (HadSyntaxError)
+        if (HadStaticError)
             return;
 
-        interpreter.Interpret(program);
+        interpreter.Interpret(statements);
     }
 
     public static void ReportRuntimeError(RuntimeException error)
@@ -68,7 +68,7 @@ public static class Runner
     public static void ReportError(SourceLocation location, string message)
     {
         Console.Error.WriteLine($"[line {location.Line}] SyntaxError: {message}");
-        HadSyntaxError = true;
+        HadStaticError = true;
     }
 
     public static void ReportWarn(SourceLocation location, string message)
