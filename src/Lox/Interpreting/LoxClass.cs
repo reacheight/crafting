@@ -1,10 +1,8 @@
-using Lox.Parsing.Syntax;
-
 namespace Lox.Interpreting;
 
-public class LoxClass(ClassDecl classDecl, Dictionary<string, LoxFunction> methods, LoxClass? superclass) : ILoxCallable
+public class LoxClass(string name, Dictionary<string, LoxFunction> methods, LoxClass? superclass) : ILoxCallable
 {
-    public string Name => classDecl.Identifier.Name;
+    public string Name => name;
 
     public int Arity => FindMethod("init")?.Arity ?? 0;
 

@@ -72,7 +72,7 @@ public class Interpreter
             m => new LoxFunction(m.Identifier.Name, m.Parameters, m.Body, classClosure, m.Identifier.Name is "init")
         );
 
-        var @class = new LoxClass(classDecl, methods, superclass);
+        var @class = new LoxClass(classDecl.Identifier.Name, methods, superclass);
         environment.Assign(classDecl.Identifier, @class);
 
         return new();

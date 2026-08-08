@@ -21,7 +21,6 @@ public class Parser(List<Token> tokens)
 
             return new LoxProgram(statements);
         }
-        // TODO: get rid of throwing exception ?
         catch (ParseException parseException)
         {
             Runner.ReportError(parseException.Token.Location, parseException.Message);
