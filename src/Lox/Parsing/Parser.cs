@@ -309,33 +309,37 @@ public class Parser(List<Token> tokens)
         if (Peek.Type is Is)
         {
             Advance();
-
-            var pattern = Peek.Type switch
-            {
-                LiteralToken literal => new Pattern(FromLiteralToken(literal)),
-                True => new Literal(new(true)),
-                False => new Literal(new(false)),
-                Nil => new Literal(new(new Interpreting.Nil())),
-                Identifier ident => new Variable(new(ident.Name, Previous.Location)),
-                Str => new StrPattern(),
-                Num => new NumPattern(),
-                Bool => new BoolPattern(),
-                _ => throw new ParseException(Peek, "Expect a supported pattern after 'is'."),
-            };
-
-            expr = new IsExpr(expr, pattern, Peek.Location);
-
-            Advance();
+            expr = new IsExpr(expr, ConsumePattern());
         }
 
         return expr;
+    }
+
+    private PatternInfo ConsumePattern()
+    {
+        var pattern = Peek.Type switch
+        {
+            LiteralToken literal => new Pattern(FromLiteralToken(literal)),
+            True => new Literal(new(true)),
+            False => new Literal(new(false)),
+            Nil => new Literal(new(new Interpreting.Nil())),
+            Identifier ident => new Variable(new(ident.Name, Peek.Location)),
+            Str => new StrPattern(),
+            Num => new NumPattern(),
+            Bool => new BoolPattern(),
+            Underscore => new DiscardPattern(),
+            _ => throw new ParseException(Peek, "Expect a supported pattern."),
+        };
+
+        Advance();
+        return new(pattern, Previous.Location);
     }
 
     private Expr Comparison() => ParseBinaryExpr(Term, _ => _ is Lexing.Less or Lexing.LessEqual or Lexing.Greater or Lexing.GreaterEqual);
 
     private Expr Term() => ParseBinaryExpr(Factor, _ => _ is Plus or Minus);
 
-    private Expr Factor() => ParseBinaryExpr(Unary, _ => _ is Star or Slash);
+    private Expr Factor() => ParseBinaryExpr(ParseSwitchExpr, _ => _ is Star or Slash);
 
     private Expr ParseBinaryExpr(Func<Expr> parseOperand, Predicate<TokenType> predicate)
     {
@@ -343,6 +347,39 @@ public class Parser(List<Token> tokens)
 
         while (AdvanceIfMatch(predicate))
             expr = new BinaryExpr(expr, new BinaryOperator(ToBinaryOperatorType(Previous.Type), Previous.Location), parseOperand());
+
+        return expr;
+    }
+
+    private Expr ParseSwitchExpr()
+    {
+        var expr = Unary();
+
+        if (Peek.Type is Switch)
+        {
+            Advance();
+            Consume<LeftBrace>("Expect '{' after 'switch'.");
+
+            var branches = new List<SwitchBranch>();
+            while (Peek.Type is not RightBrace)
+            {
+                var pattern = ConsumePattern();
+
+                Consume<Colon>("Expect ':' after pattern.");
+
+                var brachExpr = Ternary();
+                branches.Add(new(pattern, brachExpr));
+
+                if (Peek.Type is Comma)
+                    Advance();
+                else
+                    break;
+            }
+
+            Consume<RightBrace>("Expect '}' after switch branches.");
+
+            expr = new SwitchExpr(expr, branches);
+        }
 
         return expr;
     }

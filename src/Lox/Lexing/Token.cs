@@ -13,7 +13,8 @@ public readonly union TokenType(
     Identifier, Var, And, Or, Class, Fun,
     This, Super, If, Else, True, False, Nil,
     Print, Return, For, While, Break,
-    Is, Str, Num, Bool,
+    Is, Str, Num, Bool, Underscore,
+    Switch,
     LiteralToken,
     Eof
 );
@@ -73,6 +74,9 @@ public record struct Is;
 public record struct Str;
 public record struct Num;
 public record struct Bool;
+public record struct Underscore;
+
+public record struct Switch;
 
 public record struct Eof;
 

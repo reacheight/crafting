@@ -155,14 +155,28 @@ public class Resolver(Interpreter interpreter)
         ThisExpr thisExpr => ResolveThisExpr(thisExpr),
         SuperExpr superExpr => ResolveSuper(superExpr),
         IsExpr isExpr => ResolveIs(isExpr),
+        SwitchExpr switchExpr => ResolveSwitch(switchExpr),
 
         Literal => new(),
     };
 
+    private Unit ResolveSwitch(SwitchExpr switchExpr)
+    {
+        Resolve(switchExpr.Expr);
+
+        foreach (var branch in switchExpr.Branches)
+        {
+            ResolvePattern(branch.PatternInfo.Pattern);
+            Resolve(branch.Expr);
+        }
+
+        return new();
+    }
+
     private Unit ResolveIs(IsExpr isExpr)
     {
         Resolve(isExpr.Expr);
-        ResolvePattern(isExpr.Pattern);
+        ResolvePattern(isExpr.PatternInfo.Pattern);
 
         return new();
     }

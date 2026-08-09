@@ -173,26 +173,45 @@ public class Interpreter
         ThisExpr thisExpr => LookUpVariable(new("this", thisExpr.Location), thisExpr),
         SuperExpr superExpr => EvaluateSuper(superExpr),
         IsExpr isExpr => EvaluateIs(isExpr),
+        SwitchExpr switchExpr => EvaluateSwitch(switchExpr),
     };
+
+    private LoxValue EvaluateSwitch(SwitchExpr switchExpr)
+    {
+        var exprVal = Evaluate(switchExpr.Expr);
+        foreach (var branch in switchExpr.Branches)
+        {
+            if (MatchPattern(exprVal, branch.PatternInfo))
+                return Evaluate(branch.Expr);
+        }
+
+        return new Nil();
+    }
 
     private LoxValue EvaluateIs(IsExpr isExpr)
     {
         var exprVal = Evaluate(isExpr.Expr);
-        return isExpr.Pattern switch
+        return MatchPattern(exprVal, isExpr.PatternInfo);
+    }
+
+    private bool MatchPattern(LoxValue value, PatternInfo patternInfo)
+    {
+        return patternInfo.Pattern switch
         {
-            Literal literal => exprVal == literal.Value,
-            StrPattern => exprVal is string,
-            NumPattern => exprVal is double,
-            BoolPattern => exprVal is bool,
+            Literal literal => value == literal.Value,
+            StrPattern => value is string,
+            NumPattern => value is double,
+            BoolPattern => value is bool,
             Variable variable => MatchClass(variable),
+            DiscardPattern => true,
         };
 
         bool MatchClass(Variable variable)
         {
             if (LookUpVariable(variable.Identifier, variable) is not LoxClass @class)
-                throw new RuntimeException(isExpr.PatternLocation, $"{variable.Identifier.Name} is not a class.");
+                throw new RuntimeException(patternInfo.Location, $"{variable.Identifier.Name} is not a class.");
 
-            return exprVal is LoxInstance instance && instance.IsInstanceOf(@class);
+            return value is LoxInstance instance && instance.IsInstanceOf(@class);
         }
     }
 

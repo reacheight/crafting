@@ -17,7 +17,8 @@ public readonly union Expr(
     SetExpr,
     ThisExpr,
     SuperExpr,
-    IsExpr
+    IsExpr,
+    SwitchExpr
 );
 
 public class Literal(LoxValue value)
@@ -98,14 +99,24 @@ public class SuperExpr(SourceLocation keywordLocation, IdentifierInfo method)
     public IdentifierInfo Method { get; } = method;
 }
 
-public class IsExpr(Expr expr, Pattern pattern, SourceLocation patternLocation)
+public class IsExpr(Expr expr, PatternInfo patternInfo)
 {
     public Expr Expr { get; } = expr;
-    public Pattern Pattern { get; } = pattern;
-    public SourceLocation PatternLocation { get; } = patternLocation;
+    public PatternInfo PatternInfo { get; } = patternInfo;
 }
 
-public readonly union Pattern(Literal, Variable, StrPattern, NumPattern, BoolPattern);
+public class SwitchExpr(Expr expr, List<SwitchBranch> branches)
+{
+    public Expr Expr { get; } = expr;
+    public List<SwitchBranch> Branches { get; } = branches;
+}
+
+public record SwitchBranch(PatternInfo PatternInfo, Expr Expr);
+
+public record PatternInfo(Pattern Pattern, SourceLocation Location);
+
+public readonly union Pattern(Literal, Variable, StrPattern, NumPattern, BoolPattern, DiscardPattern);
 public record struct StrPattern;
 public record struct NumPattern;
 public record struct BoolPattern;
+public record struct DiscardPattern;

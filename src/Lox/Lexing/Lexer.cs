@@ -31,6 +31,7 @@ public class Lexer(string source)
         ["str"] = new Str(),
         ["num"] = new Num(),
         ["bool"] = new Bool(),
+        ["switch"] = new Switch(),
     };
 
     public IEnumerable<Token> Tokenize()
@@ -79,6 +80,8 @@ public class Lexer(string source)
 
         '/' when AdvanceIfMatch('/') => ScanComment(),
         '/' => CreateToken(new Slash()),
+
+        '_' => CreateToken(new Underscore()),
 
         ' ' or '\r' or '\t' => ScanWhitespace(),
         '\n' => ScanNewline(),
