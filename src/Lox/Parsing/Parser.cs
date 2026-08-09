@@ -300,7 +300,36 @@ public class Parser(List<Token> tokens)
 
     private Expr AndExpr() => ParseBinaryExpr(Equality, _ => _ is And);
 
-    private Expr Equality() => ParseBinaryExpr(Comparison, _ => _ is EqualEqual or BangEqual);
+    private Expr Equality() => ParseBinaryExpr(ParseIsExpr, _ => _ is EqualEqual or BangEqual);
+
+    private Expr ParseIsExpr()
+    {
+        var expr = Comparison();
+
+        if (Peek.Type is Is)
+        {
+            Advance();
+
+            var pattern = Peek.Type switch
+            {
+                LiteralToken literal => new Pattern(FromLiteralToken(literal)),
+                True => new Literal(new(true)),
+                False => new Literal(new(false)),
+                Nil => new Literal(new(new Interpreting.Nil())),
+                Identifier ident => new Variable(new(ident.Name, Previous.Location)),
+                Str => new StrPattern(),
+                Num => new NumPattern(),
+                Bool => new BoolPattern(),
+                _ => throw new ParseException(Peek, "Expect a supported pattern after 'is'."),
+            };
+
+            expr = new IsExpr(expr, pattern, Peek.Location);
+
+            Advance();
+        }
+
+        return expr;
+    }
 
     private Expr Comparison() => ParseBinaryExpr(Term, _ => _ is Lexing.Less or Lexing.LessEqual or Lexing.Greater or Lexing.GreaterEqual);
 
@@ -371,11 +400,7 @@ public class Parser(List<Token> tokens)
         This => AdvanceAnd(ParseThis),
         Super => AdvanceAnd(ParseSuper),
         Identifier ident => AdvanceAnd(() => new Variable(new(ident.Name, Previous.Location))),
-        LiteralToken literal => AdvanceAnd(() => literal switch
-        {
-            StringLiteralToken strLiteral => new Literal(strLiteral.Value),
-            NumberLiterlToken numLiteral => new Literal(numLiteral.Value),
-        }),
+        LiteralToken literal => AdvanceAnd(() => FromLiteralToken(literal)),
         LeftParen => AdvanceAnd(() =>
         {
             var expr = Expression();
@@ -384,6 +409,12 @@ public class Parser(List<Token> tokens)
         }),
         Fun => AdvanceAnd(Lambda),
         _ => throw new ParseException(Peek, "Expect expression."),
+    };
+
+    private static Literal FromLiteralToken(LiteralToken literal) => literal switch
+    {
+        string strLiteral => new Literal(strLiteral),
+        double numLiteral => new Literal(numLiteral),
     };
 
     private SuperExpr ParseSuper()

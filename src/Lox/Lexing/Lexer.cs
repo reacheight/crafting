@@ -27,6 +27,10 @@ public class Lexer(string source)
         ["var"] = new Var(),
         ["while"] = new While(),
         ["break"] = new Break(),
+        ["is"] = new Is(),
+        ["str"] = new Str(),
+        ["num"] = new Num(),
+        ["bool"] = new Bool(),
     };
 
     public IEnumerable<Token> Tokenize()
@@ -110,7 +114,7 @@ public class Lexer(string source)
         }
 
         var val = double.Parse(GetCurrentTokenText(), CultureInfo.InvariantCulture);
-        return CreateToken(new(new NumberLiterlToken(val)));
+        return CreateToken(new(val));
 
         void ScanDigits()
         {
@@ -135,7 +139,7 @@ public class Lexer(string source)
         Advance();
 
         var val = GetCurrentTokenText(1, -1);
-        return CreateToken(new(new StringLiteralToken(val)));
+        return CreateToken(new(val));
     }
 
     private Token CreateToken(TokenType type)

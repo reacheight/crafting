@@ -18,5 +18,7 @@ public class LoxInstance(LoxClass @class)
     public LoxValue Set(IdentifierInfo propertyId, LoxValue value)
         => fields[propertyId.Name] = value;
 
+    public bool IsInstanceOf(LoxClass testClass) => @class.IsSubclassOf(testClass);
+
     public override string ToString() => $"{@class.Name} instance";
 }

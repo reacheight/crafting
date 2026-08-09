@@ -154,9 +154,24 @@ public class Resolver(Interpreter interpreter)
         Ternary ternary => ResolveTernary(ternary),
         ThisExpr thisExpr => ResolveThisExpr(thisExpr),
         SuperExpr superExpr => ResolveSuper(superExpr),
+        IsExpr isExpr => ResolveIs(isExpr),
 
         Literal => new(),
     };
+
+    private Unit ResolveIs(IsExpr isExpr)
+    {
+        Resolve(isExpr.Expr);
+        ResolvePattern(isExpr.Pattern);
+
+        return new();
+    }
+
+    private void ResolvePattern(Pattern pattern)
+    {
+        if (pattern is Variable variable)
+            Resolve(variable);
+    }
 
     private Unit ResolveSuper(SuperExpr superExpr)
     {

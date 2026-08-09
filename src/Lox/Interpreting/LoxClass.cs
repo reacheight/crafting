@@ -17,5 +17,9 @@ public class LoxClass(string name, Dictionary<string, LoxFunction> methods, LoxC
             ? method
             : superclass?.FindMethod(name);
 
+    public bool IsSubclassOf(LoxClass testClass)
+        => testClass == this
+            || (superclass?.IsSubclassOf(testClass) ?? false);
+
     public override string ToString() => Name;
 }

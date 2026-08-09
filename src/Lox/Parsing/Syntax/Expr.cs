@@ -16,7 +16,8 @@ public readonly union Expr(
     GetExpr,
     SetExpr,
     ThisExpr,
-    SuperExpr
+    SuperExpr,
+    IsExpr
 );
 
 public class Literal(LoxValue value)
@@ -96,3 +97,15 @@ public class SuperExpr(SourceLocation keywordLocation, IdentifierInfo method)
     public SourceLocation KeywordLocation { get; } = keywordLocation;
     public IdentifierInfo Method { get; } = method;
 }
+
+public class IsExpr(Expr expr, Pattern pattern, SourceLocation patternLocation)
+{
+    public Expr Expr { get; } = expr;
+    public Pattern Pattern { get; } = pattern;
+    public SourceLocation PatternLocation { get; } = patternLocation;
+}
+
+public readonly union Pattern(Literal, Variable, StrPattern, NumPattern, BoolPattern);
+public record struct StrPattern;
+public record struct NumPattern;
+public record struct BoolPattern;

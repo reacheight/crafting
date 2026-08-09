@@ -172,7 +172,29 @@ public class Interpreter
         SetExpr setExpr => EvaluateSet(setExpr),
         ThisExpr thisExpr => LookUpVariable(new("this", thisExpr.Location), thisExpr),
         SuperExpr superExpr => EvaluateSuper(superExpr),
+        IsExpr isExpr => EvaluateIs(isExpr),
     };
+
+    private LoxValue EvaluateIs(IsExpr isExpr)
+    {
+        var exprVal = Evaluate(isExpr.Expr);
+        return isExpr.Pattern switch
+        {
+            Literal literal => exprVal == literal.Value,
+            StrPattern => exprVal is string,
+            NumPattern => exprVal is double,
+            BoolPattern => exprVal is bool,
+            Variable variable => MatchClass(variable),
+        };
+
+        bool MatchClass(Variable variable)
+        {
+            if (LookUpVariable(variable.Identifier, variable) is not LoxClass @class)
+                throw new RuntimeException(isExpr.PatternLocation, $"{variable.Identifier.Name} is not a class.");
+
+            return exprVal is LoxInstance instance && instance.IsInstanceOf(@class);
+        }
+    }
 
     private LoxValue EvaluateSuper(SuperExpr superExpr)
     {

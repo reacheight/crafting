@@ -13,6 +13,7 @@ public readonly union TokenType(
     Identifier, Var, And, Or, Class, Fun,
     This, Super, If, Else, True, False, Nil,
     Print, Return, For, While, Break,
+    Is, Str, Num, Bool,
     LiteralToken,
     Eof
 );
@@ -68,8 +69,11 @@ public record struct For;
 public record struct While;
 public record struct Break;
 
+public record struct Is;
+public record struct Str;
+public record struct Num;
+public record struct Bool;
+
 public record struct Eof;
 
-public readonly union LiteralToken(StringLiteralToken, NumberLiterlToken);
-public record StringLiteralToken(string Value);
-public record struct NumberLiterlToken(double Value);
+public readonly union LiteralToken(string, double);
