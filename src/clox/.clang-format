@@ -1,0 +1,20 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 120
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+QualifierAlignment: Left
+
+Cpp11BracedListStyle: false
+BreakBeforeBraces: Attach
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+IndentCaseLabels: true
