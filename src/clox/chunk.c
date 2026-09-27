@@ -1,5 +1,7 @@
 #include "chunk.h"
 #include "memory.h"
+#include <stddef.h>
+#include <stdint.h>
 
 void initChunk(Chunk* chunk) {
     chunk->count = 0;
@@ -20,6 +22,21 @@ void writeChunk(Chunk* chunk, uint8_t byte, size_t line) {
     chunk->code[chunk->count] = byte;
     chunk->lines[chunk->count] = line;
     chunk->count++;
+}
+
+void writeConstant(Chunk* chunk, Value value, size_t line) {
+    writeValueArray(&chunk->constants, value);
+    auto const_idx = chunk->constants.count - 1;
+
+    if (const_idx <= UINT8_MAX) {
+        writeChunk(chunk, OP_CONSTANT, line);
+        writeChunk(chunk, const_idx, line);
+    } else {
+        writeChunk(chunk, OP_CONSTANT_LONG, line);
+        writeChunk(chunk, const_idx & 255, line);
+        writeChunk(chunk, (const_idx >> 8) & 255, line);
+        writeChunk(chunk, (const_idx >> 16) & 255, line);
+    }
 }
 
 void freeChunk(Chunk* chunk) {

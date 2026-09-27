@@ -1,4 +1,7 @@
 #include "debug.h"
+#include "chunk.h"
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 void disassembleChunk(Chunk* chunk, const char* name) {
@@ -14,12 +17,16 @@ static int simpleInstruction(const char* name, size_t offset) {
     return offset + 1;
 }
 
-static int constantInstruction(const char* name, Chunk* chunk, size_t offset) {
-    auto constant_idx = chunk->code[offset + 1];
-    printf("%-16s %4d '", name, constant_idx);
+static int constantInstruction(const char* name, Chunk* chunk, size_t operandCount, size_t offset) {
+    uint32_t constant_idx = chunk->code[offset + 1];
+    for (auto i = 1; i < operandCount; i++) {
+        constant_idx |= chunk->code[offset + i + 1] << (8 * i);
+    }
+
+    printf("%-16s %4u '", name, constant_idx);
     printValue(chunk->constants.values[constant_idx]);
     printf("'\n");
-    return offset + 2;
+    return offset + operandCount + 1;
 }
 
 int disassembleInstruction(Chunk* chunk, size_t offset) {
@@ -35,7 +42,9 @@ int disassembleInstruction(Chunk* chunk, size_t offset) {
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
         case OP_CONSTANT:
-            return constantInstruction("OP_CONSTANT", chunk, offset);
+            return constantInstruction("OP_CONSTANT", chunk, 1, offset);
+        case OP_CONSTANT_LONG:
+            return constantInstruction("OP_CONSTANT_LONG", chunk, 3, offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;
