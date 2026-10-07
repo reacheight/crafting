@@ -43,6 +43,13 @@ static Value readConstant(size_t operandCount) {
 }
 
 static InterpreterResult run() {
+#define BINARY_OP(op)                                                                                                  \
+    do {                                                                                                               \
+        double b = pop();                                                                                              \
+        double a = pop();                                                                                              \
+        push(a op b);                                                                                                  \
+    } while (false)
+
     while (true) {
 #ifdef DEBUG_TRACING_EXECUTION
         printf("          ");
@@ -70,6 +77,22 @@ static InterpreterResult run() {
                 push(-pop());
                 break;
             }
+            case OP_ADD: {
+                BINARY_OP(+);
+                break;
+            }
+            case OP_SUBTRACT: {
+                BINARY_OP(-);
+                break;
+            }
+            case OP_MULTIPLY: {
+                BINARY_OP(*);
+                break;
+            }
+            case OP_DIVIDE: {
+                BINARY_OP(/);
+                break;
+            }
             case OP_RETURN: {
                 printValue(pop());
                 printf("\n");
@@ -77,6 +100,7 @@ static InterpreterResult run() {
             }
         }
     }
+#undef BINARY_OP
 }
 
 InterpreterResult interpret(Chunk* chunk) {
