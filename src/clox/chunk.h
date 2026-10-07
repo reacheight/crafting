@@ -2,7 +2,7 @@
 
 #include "value.h"
 
-typedef enum { OP_CONSTANT, OP_CONSTANT_LONG, OP_RETURN } OpCode;
+typedef enum { OP_CONSTANT, OP_CONSTANT_LONG, OP_NEGATE, OP_RETURN } OpCode;
 
 typedef struct {
     size_t count;
