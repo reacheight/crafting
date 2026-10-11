@@ -59,9 +59,9 @@ int main(int argc, const char* argv[argc]) {
     initVM();
 
     if (argc == 1) {
-
+        repl();
     } else if (argc == 2) {
-
+        runFile(argv[1]);
     } else {
         fprintf(stderr, "Usage: clox [script]\n");
     }

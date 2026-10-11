@@ -1,5 +1,6 @@
 #include "scanner.h"
 #include <ctype.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -21,18 +22,18 @@ static bool isAtEnd() {
     return *scanner.current == '\0';
 }
 
-char peek() {
+static char peek() {
     return *scanner.current;
 }
 
-char peekNext() {
+static char peekNext() {
     if (isAtEnd())
         return '\0';
 
     return *(scanner.current + 1);
 }
 
-char advance() {
+static char advance() {
     auto current = *scanner.current;
 
     if (!isAtEnd())
@@ -41,7 +42,7 @@ char advance() {
     return current;
 }
 
-bool match(char expected) {
+static bool match(char expected) {
     if (isAtEnd())
         return false;
 
@@ -52,18 +53,22 @@ bool match(char expected) {
     return true;
 }
 
-Token makeToken(TokenType type) {
+static size_t lexemeLength() {
+    return scanner.current - scanner.start;
+}
+
+static Token makeToken(TokenType type) {
     Token token = {
         .type = type,
         .line = scanner.line,
         .start = scanner.start,
-        .length = scanner.current - scanner.start,
+        .length = lexemeLength(),
     };
 
     return token;
 }
 
-Token errorToken(const char message[UINT8_MAX]) {
+static Token errorToken(const char* message) {
     Token token = {
         .type = TOKEN_ERROR,
         .line = scanner.line,
@@ -100,7 +105,7 @@ static void skipWhitespace() {
     }
 }
 
-Token number() {
+static Token number() {
     while (isdigit(peek()))
         advance();
 
@@ -114,7 +119,7 @@ Token number() {
     return makeToken(TOKEN_NUMBER);
 }
 
-Token string() {
+static Token string() {
     while (peek() != '"' && !isAtEnd()) {
         if (peek() == '\n')
             scanner.line++;
@@ -133,11 +138,65 @@ static bool canBeInIdentifier(char c) {
     return isalpha(c) || c == '_';
 }
 
-TokenType identifierType() {
+static TokenType checkKeyword(size_t checkedLen, size_t restLen, const char* rest, TokenType type) {
+    auto keywordLength = checkedLen + restLen;
+    if (lexemeLength() == keywordLength && memcmp(scanner.start + checkedLen, rest, restLen) == 0)
+        return type;
+
     return TOKEN_IDENTIFIER;
 }
 
-Token identifier() {
+static TokenType identifierType() {
+    switch (scanner.start[0]) {
+        case 'a':
+            return checkKeyword(1, 2, "nd", TOKEN_AND);
+        case 'c':
+            return checkKeyword(1, 4, "lass", TOKEN_CLASS);
+        case 'e':
+            return checkKeyword(1, 3, "lse", TOKEN_ELSE);
+        case 'i':
+            return checkKeyword(1, 1, "f", TOKEN_IF);
+        case 'n':
+            return checkKeyword(1, 2, "il", TOKEN_NIL);
+        case 'o':
+            return checkKeyword(1, 1, "r", TOKEN_OR);
+        case 'p':
+            return checkKeyword(1, 4, "rint", TOKEN_PRINT);
+        case 'r':
+            return checkKeyword(1, 5, "eturn", TOKEN_RETURN);
+        case 's':
+            return checkKeyword(1, 4, "uper", TOKEN_SUPER);
+        case 'v':
+            return checkKeyword(1, 2, "ar", TOKEN_VAR);
+        case 'w':
+            return checkKeyword(1, 4, "hile", TOKEN_WHILE);
+        case 'f':
+            if (lexemeLength() > 1) {
+                switch (scanner.start[1]) {
+                    case 'a':
+                        return checkKeyword(2, 3, "lse", TOKEN_FALSE);
+                    case 'o':
+                        return checkKeyword(2, 1, "r", TOKEN_FOR);
+                    case 'u':
+                        return checkKeyword(2, 1, "n", TOKEN_FUN);
+                }
+            }
+            break;
+        case 't':
+            if (scanner.current - scanner.start > 1) {
+                switch (scanner.start[1]) {
+                    case 'h':
+                        return checkKeyword(2, 2, "is", TOKEN_THIS);
+                    case 'r':
+                        return checkKeyword(2, 2, "ue", TOKEN_TRUE);
+                }
+            }
+            break;
+    }
+    return TOKEN_IDENTIFIER;
+}
+
+static Token identifier() {
     while (canBeInIdentifier(peek()) || isdigit(peek()))
         advance();
 
