@@ -44,11 +44,11 @@ static Value readConstant(size_t operandCount) {
 }
 
 static InterpreterResult run() {
-#define BINARY_OP(op)                                                                                                  \
-    do {                                                                                                               \
-        double b = pop();                                                                                              \
-        double a = pop();                                                                                              \
-        push(a op b);                                                                                                  \
+#define BINARY_OP(op)                                                                              \
+    do {                                                                                           \
+        double b = pop();                                                                          \
+        double a = pop();                                                                          \
+        push(a op b);                                                                              \
     } while (false)
 
     while (true) {
@@ -105,6 +105,19 @@ static InterpreterResult run() {
 }
 
 InterpreterResult interpret(const char* source) {
-    compile(source);
-    return INTERPRET_OK;
+    Chunk chunk;
+    initChunk(&chunk);
+
+    if (!compile(source, &chunk)) {
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    vm.chunk = &chunk;
+    vm.ip = chunk.code;
+
+    auto result = run();
+
+    freeChunk(&chunk);
+    return result;
 }
