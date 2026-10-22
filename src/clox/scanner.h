@@ -5,10 +5,10 @@
 #include <stdint.h>
 
 typedef struct {
-    TokenType type;
-    const char* start;
-    uint8_t length;
-    size_t line;
+  TokenType type;
+  const char* start;
+  uint8_t length;
+  size_t line;
 } Token;
 
 void initScanner(const char* source);

@@ -3,22 +3,22 @@
 #include "value.h"
 
 typedef enum {
-    OP_CONSTANT,
-    OP_CONSTANT_LONG,
-    OP_NEGATE,
-    OP_RETURN,
-    OP_ADD,
-    OP_SUBTRACT,
-    OP_MULTIPLY,
-    OP_DIVIDE
+  OP_CONSTANT,
+  OP_CONSTANT_LONG,
+  OP_NEGATE,
+  OP_RETURN,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE
 } OpCode;
 
 typedef struct {
-    size_t count;
-    size_t capacity;
-    uint8_t* code;
-    size_t* lines;
-    ValueArray constants;
+  size_t count;
+  size_t capacity;
+  uint8_t* code;
+  size_t* lines;
+  ValueArray constants;
 } Chunk;
 
 void initChunk(Chunk* chunk);

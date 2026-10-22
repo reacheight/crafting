@@ -5,9 +5,9 @@
 typedef double Value;
 
 typedef struct {
-    size_t capacity;
-    size_t count;
-    Value* values;
+  size_t capacity;
+  size_t count;
+  Value* values;
 } ValueArray;
 
 void initValueArray(ValueArray* array);
