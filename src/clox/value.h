@@ -30,13 +30,13 @@ void printValue(Value value);
 // };
 #define NIL_VAL ((Value){ VAL_NIL, { .number = 0 } })
 
-Value from_number(double val);
-Value from_bool(bool val);
+Value fromNumber(double val);
+Value fromBool(bool val);
 
-double as_number(Value val);
-bool as_bool(Value val);
+double asNumber(Value val);
+bool asBool(Value val);
 
-bool is_bool(Value val);
-bool is_number(Value val);
-bool is_nil(Value val);
+bool isBool(Value val);
+bool isNumber(Value val);
+bool isNil(Value val);
 bool isFalsey(Value val);

@@ -130,7 +130,7 @@ static void grouping() {
 
 static void number() {
   auto val = strtod(parser.previous.start, nullptr);
-  emitConstant(from_number(val));
+  emitConstant(fromNumber(val));
 }
 
 static void literal() {

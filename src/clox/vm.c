@@ -64,12 +64,12 @@ static Value readConstant(size_t operandCount) {
 static InterpreterResult run() {
 #define BINARY_OP(toValue, op)                                                                     \
   do {                                                                                             \
-    if (!is_number(peek(0)) || !is_number(peek(1))) {                                              \
+    if (!isNumber(peek(0)) || !isNumber(peek(1))) {                                                \
       runtimeError("Operands must be numbers.");                                                   \
       return INTERPRET_RUNTIME_ERROR;                                                              \
     }                                                                                              \
-    double b = as_number(pop());                                                                   \
-    double a = as_number(pop());                                                                   \
+    double b = asNumber(pop());                                                                    \
+    double a = asNumber(pop());                                                                    \
     push(toValue(a op b));                                                                         \
   } while (false)
 
@@ -97,11 +97,11 @@ static InterpreterResult run() {
         break;
       }
       case OP_TRUE: {
-        push(from_bool(true));
+        push(fromBool(true));
         break;
       }
       case OP_FALSE: {
-        push(from_bool(false));
+        push(fromBool(false));
         break;
       }
       case OP_NIL: {
@@ -109,32 +109,32 @@ static InterpreterResult run() {
         break;
       }
       case OP_NOT: {
-        push(from_bool(isFalsey(pop())));
+        push(fromBool(isFalsey(pop())));
         break;
       }
       case OP_NEGATE: {
-        if (!is_number(peek(0))) {
+        if (!isNumber(peek(0))) {
           runtimeError("Operand must be a number.");
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        push(from_number(-as_number(pop())));
+        push(fromNumber(-asNumber(pop())));
         break;
       }
       case OP_ADD: {
-        BINARY_OP(from_number, +);
+        BINARY_OP(fromNumber, +);
         break;
       }
       case OP_SUBTRACT: {
-        BINARY_OP(from_number, -);
+        BINARY_OP(fromNumber, -);
         break;
       }
       case OP_MULTIPLY: {
-        BINARY_OP(from_number, *);
+        BINARY_OP(fromNumber, *);
         break;
       }
       case OP_DIVIDE: {
-        BINARY_OP(from_number, /);
+        BINARY_OP(fromNumber, /);
         break;
       }
       case OP_RETURN: {

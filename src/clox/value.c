@@ -27,11 +27,11 @@ void freeValueArray(ValueArray* array) {
 void printValue(Value value) {
   switch (value.type) {
     case VAL_NUMBER: {
-      printf("%g", as_number(value));
+      printf("%g", asNumber(value));
       break;
     }
     case VAL_BOOL: {
-      printf(as_bool(value) ? "true" : "false");
+      printf(asBool(value) ? "true" : "false");
       break;
     }
     case VAL_NIL: {
@@ -41,40 +41,40 @@ void printValue(Value value) {
   }
 }
 
-Value from_number(double val) {
+Value fromNumber(double val) {
   return (Value){
     .type = VAL_NUMBER,
     .as = { .number = val },
   };
 }
 
-Value from_bool(bool val) {
+Value fromBool(bool val) {
   return (Value){
     .type = VAL_BOOL,
     .as = { .boolean = val },
   };
 }
 
-double as_number(Value val) {
+double asNumber(Value val) {
   return val.as.number;
 }
 
-bool as_bool(Value val) {
+bool asBool(Value val) {
   return val.as.boolean;
 }
 
-bool is_bool(Value val) {
+bool isBool(Value val) {
   return val.type == VAL_BOOL;
 }
 
-bool is_number(Value val) {
+bool isNumber(Value val) {
   return val.type == VAL_NUMBER;
 }
 
-bool is_nil(Value val) {
+bool isNil(Value val) {
   return val.type == VAL_NIL;
 }
 
 bool isFalsey(Value val) {
-  return is_nil(val) || (is_bool(val) && !as_bool(val));
+  return isNil(val) || (isBool(val) && !asBool(val));
 }
