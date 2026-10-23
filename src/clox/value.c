@@ -25,5 +25,39 @@ void freeValueArray(ValueArray* array) {
 }
 
 void printValue(Value value) {
-  printf("%g", value);
+  printf("%g", as_number(value));
+}
+
+Value from_number(double val) {
+  return (Value){
+    .type = VAL_NUMBER,
+    .as = { .number = val },
+  };
+}
+
+Value from_bool(bool val) {
+  return (Value){
+    .type = VAL_BOOL,
+    .as = { .boolean = val },
+  };
+}
+
+double as_number(Value val) {
+  return val.as.number;
+}
+
+bool as_bool(Value val) {
+  return val.as.boolean;
+}
+
+bool is_bool(Value val) {
+  return val.type == VAL_BOOL;
+}
+
+bool is_number(Value val) {
+  return val.type == VAL_NUMBER;
+}
+
+bool is_nil(Value val) {
+  return val.type == VAL_NIL;
 }

@@ -3,6 +3,7 @@
 #include "compiler.h"
 #include "debug.h"
 #include "value.h"
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,6 +12,19 @@ VM vm;
 
 static void resetStack() {
   vm.stackTop = vm.stack;
+}
+
+static void runtimeError(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  auto instruction = vm.ip - vm.chunk->code - 1;
+  auto line = vm.chunk->lines[instruction];
+  fprintf(stderr, "[line %zu] in script\n", line);
+  resetStack();
 }
 
 void initVM() {
@@ -29,6 +43,10 @@ Value pop() {
   return *vm.stackTop;
 }
 
+static Value peek(size_t distance) {
+  return vm.stackTop[-1 - distance];
+}
+
 static uint8_t readByte() {
   // save current ip, increment vm.ip, dereference and return the saved pointer
   return *vm.ip++;
@@ -44,11 +62,15 @@ static Value readConstant(size_t operandCount) {
 }
 
 static InterpreterResult run() {
-#define BINARY_OP(op)                                                                              \
+#define BINARY_OP(toValue, op)                                                                     \
   do {                                                                                             \
-    double b = pop();                                                                              \
-    double a = pop();                                                                              \
-    push(a op b);                                                                                  \
+    if (!is_number(peek(0)) || !is_number(peek(1))) {                                              \
+      runtimeError("Operands must be numbers.");                                                   \
+      return INTERPRET_RUNTIME_ERROR;                                                              \
+    }                                                                                              \
+    double b = as_number(pop());                                                                   \
+    double a = as_number(pop());                                                                   \
+    push(toValue(a op b));                                                                         \
   } while (false)
 
   while (true) {
@@ -75,23 +97,28 @@ static InterpreterResult run() {
         break;
       }
       case OP_NEGATE: {
-        push(-pop());
+        if (!is_number(peek(0))) {
+          runtimeError("Operand must be a number.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        push(from_number(-as_number(pop())));
         break;
       }
       case OP_ADD: {
-        BINARY_OP(+);
+        BINARY_OP(from_number, +);
         break;
       }
       case OP_SUBTRACT: {
-        BINARY_OP(-);
+        BINARY_OP(from_number, -);
         break;
       }
       case OP_MULTIPLY: {
-        BINARY_OP(*);
+        BINARY_OP(from_number, *);
         break;
       }
       case OP_DIVIDE: {
-        BINARY_OP(/);
+        BINARY_OP(from_number, /);
         break;
       }
       case OP_RETURN: {
