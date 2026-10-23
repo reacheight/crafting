@@ -137,6 +137,20 @@ static InterpreterResult run() {
         BINARY_OP(fromNumber, /);
         break;
       }
+      case OP_EQUAL: {
+        auto a = pop();
+        auto b = pop();
+        push(fromBool(valuesEqual(a, b)));
+        break;
+      }
+      case OP_LESS: {
+        BINARY_OP(fromBool, <);
+        break;
+      }
+      case OP_GREATER: {
+        BINARY_OP(fromBool, >);
+        break;
+      }
       case OP_RETURN: {
         printValue(pop());
         printf("\n");

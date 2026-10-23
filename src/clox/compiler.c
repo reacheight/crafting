@@ -182,6 +182,24 @@ static void binary() {
     case TOKEN_SLASH:
       emitByte(OP_DIVIDE);
       break;
+    case TOKEN_EQUAL_EQUAL:
+      emitByte(OP_EQUAL);
+      break;
+    case TOKEN_BANG_EQUAL:
+      emitBytes(OP_EQUAL, OP_NOT);
+      break;
+    case TOKEN_LESS:
+      emitByte(OP_LESS);
+      break;
+    case TOKEN_LESS_EQUAL:
+      emitBytes(OP_GREATER, OP_NOT);
+      break;
+    case TOKEN_GREATER:
+      emitByte(OP_GREATER);
+      break;
+    case TOKEN_GREATER_EQUAL:
+      emitBytes(OP_LESS, OP_NOT);
+      break;
     default:
       return;
   }
@@ -200,13 +218,13 @@ ParseRule rules[] = {
   [TOKEN_SLASH] = { nullptr, binary, PREC_FACTOR },
   [TOKEN_STAR] = { nullptr, binary, PREC_FACTOR },
   [TOKEN_BANG] = { unary, nullptr, PREC_NONE },
-  [TOKEN_BANG_EQUAL] = { nullptr, nullptr, PREC_NONE },
+  [TOKEN_BANG_EQUAL] = { nullptr, binary, PREC_EQUALITY },
   [TOKEN_EQUAL] = { nullptr, nullptr, PREC_NONE },
-  [TOKEN_EQUAL_EQUAL] = { nullptr, nullptr, PREC_NONE },
-  [TOKEN_GREATER] = { nullptr, nullptr, PREC_NONE },
-  [TOKEN_GREATER_EQUAL] = { nullptr, nullptr, PREC_NONE },
-  [TOKEN_LESS] = { nullptr, nullptr, PREC_NONE },
-  [TOKEN_LESS_EQUAL] = { nullptr, nullptr, PREC_NONE },
+  [TOKEN_EQUAL_EQUAL] = { nullptr, binary, PREC_EQUALITY },
+  [TOKEN_GREATER] = { nullptr, binary, PREC_COMPARISON },
+  [TOKEN_GREATER_EQUAL] = { nullptr, binary, PREC_COMPARISON },
+  [TOKEN_LESS] = { nullptr, binary, PREC_COMPARISON },
+  [TOKEN_LESS_EQUAL] = { nullptr, binary, PREC_COMPARISON },
   [TOKEN_IDENTIFIER] = { nullptr, nullptr, PREC_NONE },
   [TOKEN_STRING] = { nullptr, nullptr, PREC_NONE },
   [TOKEN_NUMBER] = { number, nullptr, PREC_NONE },
