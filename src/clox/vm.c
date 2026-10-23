@@ -108,6 +108,10 @@ static InterpreterResult run() {
         push(NIL_VAL);
         break;
       }
+      case OP_NOT: {
+        push(from_bool(isFalsey(pop())));
+        break;
+      }
       case OP_NEGATE: {
         if (!is_number(peek(0))) {
           runtimeError("Operand must be a number.");

@@ -74,3 +74,7 @@ bool is_number(Value val) {
 bool is_nil(Value val) {
   return val.type == VAL_NIL;
 }
+
+bool isFalsey(Value val) {
+  return is_nil(val) || (is_bool(val) && !as_bool(val));
+}

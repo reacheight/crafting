@@ -39,3 +39,4 @@ bool as_bool(Value val);
 bool is_bool(Value val);
 bool is_number(Value val);
 bool is_nil(Value val);
+bool isFalsey(Value val);

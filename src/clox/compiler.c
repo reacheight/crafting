@@ -157,6 +157,8 @@ static void unary() {
   switch (operatorType) {
     case TOKEN_MINUS:
       emitByte(OP_NEGATE);
+    case TOKEN_BANG:
+      emitByte(OP_NOT);
     default:
       return;
   }
@@ -197,7 +199,7 @@ ParseRule rules[] = {
   [TOKEN_SEMICOLON] = { nullptr, nullptr, PREC_NONE },
   [TOKEN_SLASH] = { nullptr, binary, PREC_FACTOR },
   [TOKEN_STAR] = { nullptr, binary, PREC_FACTOR },
-  [TOKEN_BANG] = { nullptr, nullptr, PREC_NONE },
+  [TOKEN_BANG] = { unary, nullptr, PREC_NONE },
   [TOKEN_BANG_EQUAL] = { nullptr, nullptr, PREC_NONE },
   [TOKEN_EQUAL] = { nullptr, nullptr, PREC_NONE },
   [TOKEN_EQUAL_EQUAL] = { nullptr, nullptr, PREC_NONE },
