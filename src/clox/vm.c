@@ -2,11 +2,14 @@
 #include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
+#include "memory.h"
+#include "object.h"
 #include "value.h"
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 VM vm;
 
@@ -29,9 +32,12 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
   resetStack();
+  vm.objects = nullptr;
 }
 
-void freeVM() {}
+void freeVM() {
+  freeObjects();
+}
 
 void push(Value value) {
   *vm.stackTop = value;
@@ -59,6 +65,19 @@ static Value readConstant(size_t operandCount) {
   }
 
   return vm.chunk->constants.values[constant_idx];
+}
+
+static void concatenate() {
+  auto b = asString(pop());
+  auto a = asString(pop());
+
+  auto length = a->length + b->length;
+  char* chars = ALLOCATE(char, length + 1);
+  memcpy(chars, a->chars, a->length);
+  memcpy(chars + a->length, b->chars, b->length);
+  chars[length] = '\0';
+
+  push(fromObj((Obj*)takeString(chars, length)));
 }
 
 static InterpreterResult run() {
@@ -122,7 +141,17 @@ static InterpreterResult run() {
         break;
       }
       case OP_ADD: {
-        BINARY_OP(fromNumber, +);
+        if (isString(peek(0)) && isString(peek(1))) {
+          concatenate();
+        } else if (isNumber(peek(0)) && isNumber(peek(1))) {
+          auto b = asNumber(pop());
+          auto a = asNumber(pop());
+          push(fromNumber(a + b));
+        } else {
+
+          runtimeError("Operands must be two numbers or two strings.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
         break;
       }
       case OP_SUBTRACT: {

@@ -8,6 +8,7 @@ typedef enum {
 
 struct Obj {
   ObjType type;
+  Obj* next;
 };
 
 struct ObjString {
@@ -17,6 +18,8 @@ struct ObjString {
 };
 
 ObjString* asString(Value value);
+bool isString(Value value);
 
 ObjString* copyString(const char* chars, size_t length);
+ObjString* takeString(const char* chars, size_t length);
 void printObject(Value value);

@@ -1,6 +1,7 @@
 #include "object.h"
 #include "memory.h"
 #include "value.h"
+#include "vm.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -15,7 +16,7 @@ static bool isObjType(Value value, ObjType type) {
   return isObj(value) && getObjType(value) == type;
 }
 
-static bool isString(Value value) {
+bool isString(Value value) {
   return isObjType(value, OBJ_STRING);
 }
 
@@ -30,6 +31,9 @@ static const char* asCString(Value value) {
 static Obj* allocateObject(size_t size, ObjType objType) {
   Obj* obj = reallocate(nullptr, 0, size);
   obj->type = objType;
+
+  obj->next = vm.objects;
+  vm.objects = obj;
 
   return obj;
 }
@@ -48,6 +52,10 @@ ObjString* copyString(const char* chars, size_t length) {
   heapChars[length] = '\0';
 
   return allocateString(heapChars, length);
+}
+
+ObjString* takeString(const char* chars, size_t length) {
+  return allocateString(chars, length);
 }
 
 void printObject(Value value) {
