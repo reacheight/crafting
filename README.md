@@ -1,5 +1,6 @@
-this is me following along Robert Nystrom's book "Crafting Interpreters" in C# (tree-walk interpreter implementation).
+this is me following along Robert Nystrom's book "Crafting Interpreters" in C# ([tree-walk interpreter implementation](https://github.com/reacheight/crafting/tree/main/src/Lox)) and C ([bytecode VM implementation](https://github.com/reacheight/crafting/tree/main/src/clox), WIP).
 
+# C# interpreter
 apart from learning about programming languages in this project I also try to experiment and exercise with C# 15 unions, functional programming elements in C#, and "parse, don't validate" / type-driven design.
 
 ## diff with the book implementation
