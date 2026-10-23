@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#define ALLOCATE(type, count) (type*)reallocate(nullptr, 0, sizeof(type) * count)
+
 #define GROW_ARRAY(type, pointer, oldCount, newCount)                                              \
   (type*)reallocate(pointer, sizeof(type) * (oldCount), sizeof(type) * (newCount));
 

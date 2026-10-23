@@ -2,7 +2,15 @@
 
 #include "common.h"
 
-typedef enum { VAL_NIL, VAL_BOOL, VAL_NUMBER } ValueType;
+typedef struct Obj Obj;
+typedef struct ObjString ObjString;
+
+typedef enum {
+  VAL_NIL,
+  VAL_BOOL,
+  VAL_NUMBER,
+  VAL_OBJ,
+} ValueType;
 
 typedef struct {
   ValueType type;
@@ -10,6 +18,7 @@ typedef struct {
   union {
     bool boolean;
     double number;
+    Obj* obj;
   } as;
 } Value;
 
@@ -33,11 +42,14 @@ void printValue(Value value);
 
 Value fromNumber(double val);
 Value fromBool(bool val);
+Value fromObj(Obj* obj);
 
 double asNumber(Value val);
 bool asBool(Value val);
+Obj* asObj(Value val);
 
 bool isBool(Value val);
 bool isNumber(Value val);
 bool isNil(Value val);
+bool isObj(Value val);
 bool isFalsey(Value val);

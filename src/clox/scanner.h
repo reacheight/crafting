@@ -7,7 +7,7 @@
 typedef struct {
   TokenType type;
   const char* start;
-  uint8_t length;
+  size_t length;
   size_t line;
 } Token;
 

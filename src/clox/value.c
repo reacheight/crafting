@@ -1,6 +1,8 @@
 #include "value.h"
 #include "memory.h"
+#include "object.h"
 #include <stdio.h>
+#include <string.h>
 
 void initValueArray(ValueArray* array) {
   array->count = 0;
@@ -38,6 +40,10 @@ void printValue(Value value) {
       printf("nil");
       break;
     }
+    case VAL_OBJ: {
+      printObject(value);
+      break;
+    }
   }
 }
 
@@ -52,6 +58,12 @@ bool valuesEqual(Value a, Value b) {
       return asNumber(a) == asNumber(b);
     case VAL_NIL:
       return true;
+    case VAL_OBJ: {
+      ObjString* aString = asString(a);
+      ObjString* bString = asString(b);
+      return aString->length == bString->length &&
+             memcmp(aString->chars, bString->chars, aString->length) == 0;
+    }
     default:
       return false;
   }
@@ -71,12 +83,23 @@ Value fromBool(bool val) {
   };
 }
 
+Value fromObj(Obj* obj) {
+  return (Value){
+    .type = VAL_OBJ,
+    .as = { .obj = obj },
+  };
+}
+
 double asNumber(Value val) {
   return val.as.number;
 }
 
 bool asBool(Value val) {
   return val.as.boolean;
+}
+
+Obj* asObj(Value val) {
+  return val.as.obj;
 }
 
 bool isBool(Value val) {
@@ -89,6 +112,10 @@ bool isNumber(Value val) {
 
 bool isNil(Value val) {
   return val.type == VAL_NIL;
+}
+
+bool isObj(Value val) {
+  return val.type == VAL_OBJ;
 }
 
 bool isFalsey(Value val) {
