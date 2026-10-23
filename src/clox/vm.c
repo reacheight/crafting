@@ -96,6 +96,18 @@ static InterpreterResult run() {
         push(constant);
         break;
       }
+      case OP_TRUE: {
+        push(from_bool(true));
+        break;
+      }
+      case OP_FALSE: {
+        push(from_bool(false));
+        break;
+      }
+      case OP_NIL: {
+        push(NIL_VAL);
+        break;
+      }
       case OP_NEGATE: {
         if (!is_number(peek(0))) {
           runtimeError("Operand must be a number.");
